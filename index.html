@@ -352,7 +352,7 @@
   <h2 id="today-heading">Logged</h2>
   <table>
     <thead>
-      <tr><th>Phase</th><th>Weight</th><th>Reps</th></tr>
+      <tr><th>Exercise</th><th>Phase</th><th>Weight</th><th>Reps</th></tr>
     </thead>
     <tbody id="today-body"></tbody>
   </table>
@@ -608,7 +608,7 @@
       todayBody.innerHTML = "";
       for (const row of data.rows || []) {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${row.phase ?? ""}</td><td>${row.actualWeight ?? ""} lbs</td><td>${row.reps ?? ""}</td>`;
+        tr.innerHTML = `<td>${row.exercise ?? ""}</td><td>${row.phase ?? ""}</td><td>${row.actualWeight ?? ""} lbs</td><td>${row.reps ?? ""}</td>`;
         todayBody.appendChild(tr);
       }
     } catch (e) {
@@ -674,9 +674,9 @@
           day: "numeric",
         });
         const rows = g.rows
-          .map((r) => `<tr><td>${r.phase ?? ""}</td><td>${r.actualWeight ?? ""} lbs</td><td>${r.reps ?? ""}</td></tr>`)
+          .map((r) => `<tr><td>${r.exercise ?? ""}</td><td>${r.phase ?? ""}</td><td>${r.actualWeight ?? ""} lbs</td><td>${r.reps ?? ""}</td></tr>`)
           .join("");
-        return `<div class="date-group"><h3>${label}</h3><table><thead><tr><th>Phase</th><th>Weight</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        return `<div class="date-group"><h3>${label}</h3><table><thead><tr><th>Exercise</th><th>Phase</th><th>Weight</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       })
       .join("");
   }
