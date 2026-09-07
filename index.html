@@ -276,23 +276,54 @@
   <label>Exercise
     <select id="exercise" required>
       <option value="Incline Bench Press">Incline Bench Press</option>
+      <option value="__custom__">+ Custom (build as you go)</option>
     </select>
   </label>
 
-  <label>Week
-    <select id="week" required></select>
-  </label>
+  <div id="standard-fields">
+    <label>Week
+      <select id="week" required></select>
+    </label>
 
-  <label>Phase
-    <select id="phase" required></select>
-  </label>
+    <label>Phase
+      <select id="phase" required></select>
+    </label>
 
-  <div class="prescribed">
-    <div class="item"><span class="label">Target Weight</span><span class="value" id="p-weight">—</span></div>
-    <div class="item"><span class="label">Target Reps</span><span class="value" id="p-reps">—</span></div>
-    <div class="item"><span class="label">Rest</span><span class="value" id="p-rest">—</span></div>
+    <div class="prescribed">
+      <div class="item"><span class="label">Target Weight</span><span class="value" id="p-weight">—</span></div>
+      <div class="item"><span class="label">Target Reps</span><span class="value" id="p-reps">—</span></div>
+      <div class="item"><span class="label">Rest</span><span class="value" id="p-rest">—</span></div>
+    </div>
+    <div class="plates-row" id="p-plates"></div>
   </div>
-  <div class="plates-row" id="p-plates"></div>
+
+  <div id="custom-fields" hidden style="display: flex; flex-direction: column; gap: 14px;">
+    <label>Exercise Name
+      <input type="text" id="custom-exercise" placeholder="e.g. Flat Bench Press">
+    </label>
+    <label>Week / Block <span style="color: var(--text-dim); font-weight: 400;">(optional)</span>
+      <input type="text" id="custom-week" placeholder="e.g. Week 1 - Foundation">
+    </label>
+    <div class="row">
+      <label>Phase / Set Label
+        <input type="text" id="custom-phase" placeholder="e.g. Working Set 1">
+      </label>
+      <label>Set #
+        <input type="number" id="custom-set-number" inputmode="numeric" min="1" step="1" value="1">
+      </label>
+    </div>
+    <div class="row">
+      <label>Target Weight <span style="color: var(--text-dim); font-weight: 400;">(optional)</span>
+        <input type="number" id="custom-target-weight" inputmode="decimal" step="0.5">
+      </label>
+      <label>Target Reps <span style="color: var(--text-dim); font-weight: 400;">(optional)</span>
+        <input type="text" id="custom-target-reps" placeholder="e.g. 2 reps">
+      </label>
+    </div>
+    <label>Rest <span style="color: var(--text-dim); font-weight: 400;">(optional, e.g. "90 sec" or "3 min")</span>
+      <input type="text" id="custom-rest" placeholder="e.g. 2 min">
+    </label>
+  </div>
 
   <div class="row">
     <label>Actual Weight (lbs)
@@ -383,6 +414,16 @@
   };
 
   const dateInput = document.getElementById("date");
+  const exerciseSelect = document.getElementById("exercise");
+  const standardFields = document.getElementById("standard-fields");
+  const customFields = document.getElementById("custom-fields");
+  const customExercise = document.getElementById("custom-exercise");
+  const customWeek = document.getElementById("custom-week");
+  const customPhase = document.getElementById("custom-phase");
+  const customSetNumber = document.getElementById("custom-set-number");
+  const customTargetWeight = document.getElementById("custom-target-weight");
+  const customTargetReps = document.getElementById("custom-target-reps");
+  const customRest = document.getElementById("custom-rest");
   const weekSelect = document.getElementById("week");
   const phaseSelect = document.getElementById("phase");
   const pWeight = document.getElementById("p-weight");
@@ -534,6 +575,30 @@
 
   populatePhases();
   syncPrescribed();
+
+  function isCustomMode() {
+    return exerciseSelect.value === "__custom__";
+  }
+
+  function toggleExerciseMode() {
+    const custom = isCustomMode();
+    standardFields.hidden = custom;
+    customFields.hidden = !custom;
+
+    weekSelect.required = !custom;
+    phaseSelect.required = !custom;
+    customExercise.required = custom;
+    customPhase.required = custom;
+
+    stopRestTimer();
+    if (custom) {
+      actualWeightInput.value = "";
+    } else {
+      syncPrescribed();
+    }
+  }
+  exerciseSelect.addEventListener("change", toggleExerciseMode);
+  toggleExerciseMode();
 
   async function loadToday() {
     try {
@@ -737,22 +802,42 @@
     statusEl.className = "";
     statusEl.textContent = "Saving...";
 
-    const plan = WEEK_PLANS[weekSelect.value];
-    const idx = plan.findIndex((s) => s.phase === phaseSelect.value);
-    const step = plan[idx];
+    const custom = isCustomMode();
+    let payload;
+    let restString;
 
-    const payload = {
-      date: dateInput.value,
-      exercise: document.getElementById("exercise").value,
-      week: weekSelect.value,
-      phase: step.phase,
-      setNumber: idx + 1,
-      targetWeight: step.weight,
-      targetReps: step.reps,
-      actualWeight: actualWeightInput.value,
-      reps: document.getElementById("reps").value,
-      notes: document.getElementById("notes").value,
-    };
+    if (custom) {
+      payload = {
+        date: dateInput.value,
+        exercise: customExercise.value.trim(),
+        week: customWeek.value.trim() || "Custom",
+        phase: customPhase.value.trim(),
+        setNumber: customSetNumber.value,
+        targetWeight: customTargetWeight.value || null,
+        targetReps: customTargetReps.value.trim() || null,
+        actualWeight: actualWeightInput.value,
+        reps: document.getElementById("reps").value,
+        notes: document.getElementById("notes").value,
+      };
+      restString = customRest.value.trim();
+    } else {
+      const plan = WEEK_PLANS[weekSelect.value];
+      const idx = plan.findIndex((s) => s.phase === phaseSelect.value);
+      const step = plan[idx];
+      payload = {
+        date: dateInput.value,
+        exercise: document.getElementById("exercise").value,
+        week: weekSelect.value,
+        phase: step.phase,
+        setNumber: idx + 1,
+        targetWeight: step.weight,
+        targetReps: step.reps,
+        actualWeight: actualWeightInput.value,
+        reps: document.getElementById("reps").value,
+        notes: document.getElementById("notes").value,
+      };
+      restString = step.rest;
+    }
 
     try {
       const res = await fetch(`${WORKER_URL}/log`, {
@@ -768,13 +853,18 @@
       document.getElementById("reps").value = "";
       document.getElementById("notes").value = "";
 
-      const restSeconds = parseRestSeconds(step.rest);
+      const restSeconds = parseRestSeconds(restString);
       if (restSeconds) {
         startRestTimer(restSeconds);
       } else {
         stopRestTimer();
       }
-      advancePhase();
+
+      if (custom) {
+        customSetNumber.value = Number(customSetNumber.value || 1) + 1;
+      } else {
+        advancePhase();
+      }
       loadToday();
     } catch (err) {
       statusEl.className = "err";
