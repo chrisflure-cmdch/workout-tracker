@@ -1,0 +1,9 @@
+name = "workout-log-api"
+main = "src/index.js"
+compatibility_date = "2026-09-07"
+
+[vars]
+NOTION_DATABASE_ID = "199eaed5-7314-430a-8617-a1c755cadb97"
+
+# NOTION_TOKEN is a secret, not set here.
+# Deploy once, then run: wrangler secret put NOTION_TOKEN

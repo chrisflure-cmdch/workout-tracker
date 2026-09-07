@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workout Log</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root {
+    --ground: #171310;
+    --panel: #211b16;
+    --line: #3a2f26;
+    --text: #f2e9db;
+    --text-dim: #a99a87;
+    --glow: #e8a33d;
+    --glow-bright: #ffcf7a;
+    --ok: #6fcf7c;
+    --err: #e0665a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--ground); color: var(--text); }
+  body {
+    min-height: 100dvh;
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    padding: 20px 16px 60px;
+  }
+  h1 {
+    font-size: 22px;
+    margin: 6px 0 18px;
+    color: var(--glow-bright);
+  }
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  input, select, textarea {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 14px;
+    font-size: 17px;
+    font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--glow);
+    border-color: var(--glow);
+  }
+  .row { display: flex; gap: 10px; }
+  .row > label { flex: 1; }
+  button {
+    margin-top: 6px;
+    padding: 16px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--glow-bright), var(--glow));
+    color: #241705;
+    font-weight: 700;
+    font-size: 17px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; }
+  #status {
+    max-width: 480px;
+    margin: 12px auto 0;
+    font-size: 14px;
+    min-height: 20px;
+  }
+  #status.ok { color: var(--ok); }
+  #status.err { color: var(--err); }
+  .today {
+    max-width: 480px;
+    margin: 28px auto 0;
+  }
+  .today h2 {
+    font-size: 15px;
+    color: var(--text-dim);
+    margin: 0 0 10px;
+  }
+  .today table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .today th, .today td {
+    text-align: left;
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .today th { color: var(--text-dim); font-weight: 500; }
+</style>
+</head>
+<body>
+<form id="log-form">
+  <h1>Workout Log</h1>
+
+  <label>Date
+    <input type="date" id="date" required>
+  </label>
+
+  <label>Exercise
+    <select id="exercise" required>
+      <option value="Incline Bench Press">Incline Bench Press</option>
+    </select>
+  </label>
+
+  <label>Week
+    <select id="week" required>
+      <option value="Week 1 - Foundation">Week 1 - Foundation</option>
+      <option value="Week 2 - Neurological Peak">Week 2 - Neurological Peak</option>
+      <option value="Week 3 - De-load">Week 3 - De-load</option>
+      <option value="Week 4 - Max Effort Test">Week 4 - Max Effort Test</option>
+    </select>
+  </label>
+
+  <div class="row">
+    <label>Set #
+      <input type="number" id="setNumber" inputmode="numeric" min="1" step="1" required>
+    </label>
+    <label>Target Weight (lbs)
+      <input type="number" id="targetWeight" inputmode="decimal" step="0.5">
+    </label>
+  </div>
+
+  <div class="row">
+    <label>Actual Weight (lbs)
+      <input type="number" id="actualWeight" inputmode="decimal" step="0.5" required>
+    </label>
+    <label>Reps
+      <input type="number" id="reps" inputmode="numeric" min="0" step="1" required>
+    </label>
+  </div>
+
+  <label>Notes
+    <textarea id="notes" rows="2" placeholder="optional"></textarea>
+  </label>
+
+  <button type="submit" id="submit-btn">Log set</button>
+  <div id="status"></div>
+</form>
+
+<div class="today">
+  <h2>Logged today</h2>
+  <table>
+    <thead>
+      <tr><th>Set</th><th>Exercise</th><th>Weight</th><th>Reps</th></tr>
+    </thead>
+    <tbody id="today-body"></tbody>
+  </table>
+</div>
+
+<script>
+  const WORKER_URL = "WORKER_URL_PLACEHOLDER";
+
+  const weekTargets = {
+    "Week 1 - Foundation": 143,
+    "Week 2 - Neurological Peak": 153,
+    "Week 3 - De-load": 113,
+    "Week 4 - Max Effort Test": 163,
+  };
+
+  const dateInput = document.getElementById("date");
+  const weekSelect = document.getElementById("week");
+  const targetInput = document.getElementById("targetWeight");
+  const form = document.getElementById("log-form");
+  const statusEl = document.getElementById("status");
+  const submitBtn = document.getElementById("submit-btn");
+  const todayBody = document.getElementById("today-body");
+
+  function todayISO() {
+    const d = new Date();
+    const off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+  }
+
+  dateInput.value = todayISO();
+
+  function syncTargetToWeek() {
+    targetInput.value = weekTargets[weekSelect.value] ?? "";
+  }
+  weekSelect.addEventListener("change", syncTargetToWeek);
+  syncTargetToWeek();
+
+  async function loadToday() {
+    try {
+      const res = await fetch(`${WORKER_URL}/today?date=${encodeURIComponent(dateInput.value)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      todayBody.innerHTML = "";
+      for (const row of data.rows || []) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${row.setNumber ?? ""}</td><td>${row.exercise ?? ""}</td><td>${row.actualWeight ?? ""} lbs</td><td>${row.reps ?? ""}</td>`;
+        todayBody.appendChild(tr);
+      }
+    } catch (e) {
+      // silent — today list is a convenience, not critical path
+    }
+  }
+
+  dateInput.addEventListener("change", loadToday);
+  loadToday();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    statusEl.className = "";
+    statusEl.textContent = "Saving...";
+
+    const payload = {
+      date: dateInput.value,
+      exercise: document.getElementById("exercise").value,
+      week: weekSelect.value,
+      setNumber: document.getElementById("setNumber").value,
+      targetWeight: targetInput.value || null,
+      actualWeight: document.getElementById("actualWeight").value,
+      reps: document.getElementById("reps").value,
+      notes: document.getElementById("notes").value,
+    };
+
+    try {
+      const res = await fetch(`${WORKER_URL}/log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save");
+
+      statusEl.className = "ok";
+      statusEl.textContent = "Saved.";
+      document.getElementById("setNumber").value = Number(payload.setNumber) + 1;
+      document.getElementById("actualWeight").value = "";
+      document.getElementById("reps").value = "";
+      document.getElementById("notes").value = "";
+      loadToday();
+    } catch (err) {
+      statusEl.className = "err";
+      statusEl.textContent = err.message || "Something went wrong.";
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
