@@ -21,6 +21,10 @@
     --accent-green: #4caf50;
   }
   * { box-sizing: border-box; }
+  /* Author display rules (flex/grid on labels, buttons, etc.) otherwise beat
+     the UA stylesheet's [hidden]{display:none} regardless of specificity,
+     since origin is checked before specificity in the cascade. */
+  [hidden] { display: none !important; }
   html, body { margin: 0; background: var(--ground); color: var(--text); }
   body {
     min-height: 100dvh;
@@ -350,7 +354,6 @@
   }
   .progression-card svg { display: block; width: 100%; height: auto; }
   #custom-fields { display: flex; flex-direction: column; gap: 14px; }
-  #custom-fields[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -380,6 +383,7 @@
   <label>Exercise
     <select id="exercise" required>
       <option value="Incline Bench Press">Incline Bench Press</option>
+      <option value="Squat (Body Masters PS300)">Squat (Body Masters PS300)</option>
       <option value="__custom__">+ Custom (build as you go)</option>
     </select>
   </label>
@@ -402,7 +406,7 @@
   </div>
 
   <div id="custom-fields" hidden>
-    <label>Exercise Name
+    <label id="custom-exercise-label">Exercise Name
       <input type="text" id="custom-exercise" placeholder="e.g. Flat Bench Press">
     </label>
     <label>Week / Block <span style="color: var(--text-dim); font-weight: 400;">(optional)</span>
@@ -496,43 +500,84 @@
 <script>
   const WORKER_URL = "https://workout-log-api.chrisflure.workers.dev";
 
-  // Source of truth: 4-Week Smith Machine Strength Progression Tracker (Incline Bench Press),
-  // corrected 2026-09-06 for the 23 lb Body Masters counterbalanced bar.
-  const WEEK_PLANS = {
-    "Week 1 - Foundation": [
-      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
-      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
-      { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec", plates: [45] },
-      { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-      { phase: "Working Set 1", weight: 143, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 5] },
-      { phase: "Working Set 2", weight: 143, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 5] },
-      { phase: "Working Set 3", weight: 143, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 5] },
-      { phase: "Working Set 4", weight: 143, reps: "2 reps", rest: "—", plates: [45, 10, 5] },
-    ],
-    "Week 2 - Neurological Peak": [
-      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
-      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
-      { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec", plates: [45] },
-      { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-      { phase: "Working Set 1", weight: 153, reps: "2 reps", rest: "4-5 min", plates: [45, 10, 10] },
-      { phase: "Working Set 2", weight: 153, reps: "2 reps", rest: "4-5 min", plates: [45, 10, 10] },
-      { phase: "Working Set 3", weight: 153, reps: "2 reps", rest: "—", plates: [45, 10, 10] },
-    ],
-    "Week 3 - De-load": [
-      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
-      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
-      { phase: "Working Set 1", weight: 113, reps: "3 reps (Slow)", rest: "2 min", plates: [45] },
-      { phase: "Working Set 2", weight: 113, reps: "3 reps (Slow)", rest: "2 min", plates: [45] },
-      { phase: "Working Set 3", weight: 113, reps: "3 reps (Slow)", rest: "—", plates: [45] },
-    ],
-    "Week 4 - Max Effort Test": [
-      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
-      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
-      { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec", plates: [45] },
-      { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-      { phase: "Warm-Up Set 5", weight: 153, reps: "1 rep", rest: "3 min", plates: [45, 10, 10] },
-      { phase: "Max Attempt", weight: 163, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [45, 25] },
-    ],
+  // Source of truth: 4-Week Smith Machine Strength Progression Tracker.
+  // Incline Bench Press corrected 2026-09-06 for the 23 lb Body Masters counterbalanced bar.
+  // Squat (Body Masters PS300) added 2026-09-07 for the 62 lb sled, warm-up starting at
+  // one 45 lb plate/side, ramping to a 260 lb max-effort target (nearest clean plate
+  // combo: 262 lbs).
+  const EXERCISE_PLANS = {
+    "Incline Bench Press": {
+      "Week 1 - Foundation": [
+        { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
+        { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec", plates: [45] },
+        { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min", plates: [45, 10] },
+        { phase: "Working Set 1", weight: 143, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 5] },
+        { phase: "Working Set 2", weight: 143, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 5] },
+        { phase: "Working Set 3", weight: 143, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 5] },
+        { phase: "Working Set 4", weight: 143, reps: "2 reps", rest: "—", plates: [45, 10, 5] },
+      ],
+      "Week 2 - Neurological Peak": [
+        { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
+        { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec", plates: [45] },
+        { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min", plates: [45, 10] },
+        { phase: "Working Set 1", weight: 153, reps: "2 reps", rest: "4-5 min", plates: [45, 10, 10] },
+        { phase: "Working Set 2", weight: 153, reps: "2 reps", rest: "4-5 min", plates: [45, 10, 10] },
+        { phase: "Working Set 3", weight: 153, reps: "2 reps", rest: "—", plates: [45, 10, 10] },
+      ],
+      "Week 3 - De-load": [
+        { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
+        { phase: "Working Set 1", weight: 113, reps: "3 reps (Slow)", rest: "2 min", plates: [45] },
+        { phase: "Working Set 2", weight: 113, reps: "3 reps (Slow)", rest: "2 min", plates: [45] },
+        { phase: "Working Set 3", weight: 113, reps: "3 reps (Slow)", rest: "—", plates: [45] },
+      ],
+      "Week 4 - Max Effort Test": [
+        { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
+        { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec", plates: [45] },
+        { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min", plates: [45, 10] },
+        { phase: "Warm-Up Set 5", weight: 153, reps: "1 rep", rest: "3 min", plates: [45, 10, 10] },
+        { phase: "Max Attempt", weight: 163, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [45, 25] },
+      ],
+    },
+    "Squat (Body Masters PS300)": {
+      "Week 1 - Foundation": [
+        { phase: "Warm-Up Set 1", weight: 152, reps: "10 reps", rest: "60 sec", plates: [45] },
+        { phase: "Warm-Up Set 2", weight: 172, reps: "5 reps", rest: "60 sec", plates: [45, 10] },
+        { phase: "Warm-Up Set 3", weight: 192, reps: "3 reps", rest: "90 sec", plates: [45, 10, 10] },
+        { phase: "Warm-Up Set 4", weight: 202, reps: "1 rep", rest: "2 min", plates: [45, 25] },
+        { phase: "Working Set 1", weight: 242, reps: "2 reps", rest: "3-5 min", plates: [45, 45] },
+        { phase: "Working Set 2", weight: 242, reps: "2 reps", rest: "3-5 min", plates: [45, 45] },
+        { phase: "Working Set 3", weight: 242, reps: "2 reps", rest: "3-5 min", plates: [45, 45] },
+        { phase: "Working Set 4", weight: 242, reps: "2 reps", rest: "—", plates: [45, 45] },
+      ],
+      "Week 2 - Neurological Peak": [
+        { phase: "Warm-Up Set 1", weight: 152, reps: "10 reps", rest: "60 sec", plates: [45] },
+        { phase: "Warm-Up Set 2", weight: 172, reps: "5 reps", rest: "60 sec", plates: [45, 10] },
+        { phase: "Warm-Up Set 3", weight: 192, reps: "3 reps", rest: "90 sec", plates: [45, 10, 10] },
+        { phase: "Warm-Up Set 4", weight: 202, reps: "1 rep", rest: "2 min", plates: [45, 25] },
+        { phase: "Working Set 1", weight: 252, reps: "2 reps", rest: "4-5 min", plates: [45, 45, 5] },
+        { phase: "Working Set 2", weight: 252, reps: "2 reps", rest: "4-5 min", plates: [45, 45, 5] },
+        { phase: "Working Set 3", weight: 252, reps: "2 reps", rest: "—", plates: [45, 45, 5] },
+      ],
+      "Week 3 - De-load": [
+        { phase: "Warm-Up Set 1", weight: 152, reps: "10 reps", rest: "60 sec", plates: [45] },
+        { phase: "Warm-Up Set 2", weight: 172, reps: "5 reps", rest: "60 sec", plates: [45, 10] },
+        { phase: "Working Set 1", weight: 192, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10, 10] },
+        { phase: "Working Set 2", weight: 192, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10, 10] },
+        { phase: "Working Set 3", weight: 192, reps: "3 reps (Slow)", rest: "—", plates: [45, 10, 10] },
+      ],
+      "Week 4 - Max Effort Test": [
+        { phase: "Warm-Up Set 1", weight: 152, reps: "10 reps", rest: "60 sec", plates: [45] },
+        { phase: "Warm-Up Set 2", weight: 172, reps: "5 reps", rest: "60 sec", plates: [45, 10] },
+        { phase: "Warm-Up Set 3", weight: 192, reps: "3 reps", rest: "90 sec", plates: [45, 10, 10] },
+        { phase: "Warm-Up Set 4", weight: 202, reps: "1 rep", rest: "2 min", plates: [45, 25] },
+        { phase: "Warm-Up Set 5", weight: 252, reps: "1 rep", rest: "3 min", plates: [45, 45, 5] },
+        { phase: "Max Attempt", weight: 262, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [45, 45, 10] },
+      ],
+    },
   };
 
   const dateInput = document.getElementById("date");
@@ -648,16 +693,23 @@
   dateInput.addEventListener("change", syncWeekday);
   syncWeekday();
 
-  for (const week of Object.keys(WEEK_PLANS)) {
-    const opt = document.createElement("option");
-    opt.value = week;
-    opt.textContent = week;
-    weekSelect.appendChild(opt);
+  function currentPlan() {
+    return EXERCISE_PLANS[exerciseSelect.value];
+  }
+
+  function populateWeeks() {
+    weekSelect.innerHTML = "";
+    for (const week of Object.keys(currentPlan())) {
+      const opt = document.createElement("option");
+      opt.value = week;
+      opt.textContent = week;
+      weekSelect.appendChild(opt);
+    }
   }
 
   function populatePhases() {
     phaseSelect.innerHTML = "";
-    for (const step of WEEK_PLANS[weekSelect.value]) {
+    for (const step of currentPlan()[weekSelect.value]) {
       const opt = document.createElement("option");
       opt.value = step.phase;
       opt.textContent = `${step.phase} — ${step.weight} lbs`;
@@ -676,7 +728,7 @@
   }
 
   function syncPrescribed() {
-    const plan = WEEK_PLANS[weekSelect.value];
+    const plan = currentPlan()[weekSelect.value];
     const step = plan.find((s) => s.phase === phaseSelect.value) || plan[0];
     pWeight.textContent = `${step.weight} lbs`;
     pReps.textContent = step.reps;
@@ -695,27 +747,39 @@
     stopRestTimer();
   });
 
+  populateWeeks();
   populatePhases();
   syncPrescribed();
 
-  function isCustomMode() {
+  // Only exercises with a coded EXERCISE_PLANS entry (Incline Bench Press, Squat)
+  // use the progression fields. Anything else -- true "+ Custom" -- uses the
+  // free-entry fields. Only "+ Custom" itself needs the exercise name typed; a
+  // named dropdown option already supplies it.
+  function isFreeEntryMode() {
+    return !(exerciseSelect.value in EXERCISE_PLANS);
+  }
+  function isTypedCustomMode() {
     return exerciseSelect.value === "__custom__";
   }
 
   function toggleExerciseMode() {
-    const custom = isCustomMode();
-    standardFields.hidden = custom;
-    customFields.hidden = !custom;
+    const freeEntry = isFreeEntryMode();
+    const typedCustom = isTypedCustomMode();
+    standardFields.hidden = freeEntry;
+    customFields.hidden = !freeEntry;
+    document.getElementById("custom-exercise-label").hidden = !typedCustom;
 
-    weekSelect.required = !custom;
-    phaseSelect.required = !custom;
-    customExercise.required = custom;
-    customPhase.required = custom;
+    weekSelect.required = !freeEntry;
+    phaseSelect.required = !freeEntry;
+    customExercise.required = typedCustom;
+    customPhase.required = freeEntry;
 
     stopRestTimer();
-    if (custom) {
+    if (freeEntry) {
       actualWeightInput.value = "";
     } else {
+      populateWeeks();
+      populatePhases();
       syncPrescribed();
     }
   }
@@ -742,7 +806,7 @@
   loadToday();
 
   function advancePhase() {
-    const plan = WEEK_PLANS[weekSelect.value];
+    const plan = currentPlan()[weekSelect.value];
     const idx = plan.findIndex((s) => s.phase === phaseSelect.value);
     if (idx >= 0 && idx < plan.length - 1) {
       phaseSelect.selectedIndex = idx + 1;
@@ -1081,14 +1145,14 @@
     statusEl.className = "";
     statusEl.textContent = "Saving...";
 
-    const custom = isCustomMode();
+    const custom = isFreeEntryMode();
     let payload;
     let restString;
 
     if (custom) {
       payload = {
         date: dateInput.value,
-        exercise: customExercise.value.trim(),
+        exercise: isTypedCustomMode() ? customExercise.value.trim() : exerciseSelect.value,
         week: customWeek.value.trim() || "Custom",
         phase: customPhase.value.trim(),
         setNumber: customSetNumber.value,
@@ -1100,7 +1164,7 @@
       };
       restString = customRest.value.trim();
     } else {
-      const plan = WEEK_PLANS[weekSelect.value];
+      const plan = currentPlan()[weekSelect.value];
       const idx = plan.findIndex((s) => s.phase === phaseSelect.value);
       const step = plan[idx];
       payload = {
