@@ -17,6 +17,7 @@
     --ok: #6fcf7c;
     --err: #e0665a;
     --accent-blue: #3a6ea5;
+    --accent-green: #4caf50;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--ground); color: var(--text); }
@@ -203,6 +204,50 @@
     border-bottom: 1px solid var(--line);
   }
   .today th { color: var(--text-dim); font-weight: 500; }
+  .tabs {
+    display: flex;
+    gap: 8px;
+    max-width: 480px;
+    margin: 0 auto 22px;
+  }
+  .tab-btn {
+    flex: 1;
+    margin: 0;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text-dim);
+    cursor: pointer;
+  }
+  .tab-btn.today.active { border-color: var(--glow); color: var(--glow-bright); background: rgba(232, 163, 61, 0.14); }
+  .tab-btn.week.active { border-color: var(--accent-blue); color: #9dc3e8; background: rgba(58, 110, 165, 0.18); }
+  .tab-btn.month.active { border-color: var(--accent-green); color: #9adf9e; background: rgba(76, 175, 80, 0.14); }
+  .range-view { max-width: 480px; margin: 0 auto; }
+  .date-group { margin-bottom: 22px; }
+  .date-group h3 { font-size: 14px; color: var(--glow-bright); margin: 0 0 8px; }
+  .date-group table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .date-group th, .date-group td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  .date-group th { color: var(--text-dim); font-weight: 500; }
+  .empty-note { color: var(--text-dim); font-size: 14px; text-align: center; padding: 30px 0; }
+  .progression-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 14px 8px;
+    margin-bottom: 22px;
+  }
+  .progression-card h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin: 0 0 6px;
+  }
+  .progression-card svg { display: block; width: 100%; height: auto; }
 </style>
 </head>
 <body>
@@ -215,6 +260,14 @@
     <path d="M22 12h-2M18 8v8M18 8a1 1 0 0 0-1-1h-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1zM15 12H9"/>
   </svg>
 </div>
+
+<div class="tabs">
+  <button type="button" class="tab-btn today active" data-tab="today">Today</button>
+  <button type="button" class="tab-btn week" data-tab="week">Week</button>
+  <button type="button" class="tab-btn month" data-tab="month">Month</button>
+</div>
+
+<div id="tab-today" class="tab-panel">
 <form id="log-form">
   <label><span>Date <span id="date-weekday" style="color: var(--glow-bright); font-weight: 600;"></span></span>
     <input type="date" id="date" required>
@@ -272,6 +325,17 @@
     </thead>
     <tbody id="today-body"></tbody>
   </table>
+</div>
+</div>
+
+<div id="tab-week" class="tab-panel" hidden>
+  <div class="range-view" id="week-progression"></div>
+  <div class="range-view" id="week-body"></div>
+</div>
+
+<div id="tab-month" class="tab-panel" hidden>
+  <div class="range-view" id="month-progression"></div>
+  <div class="range-view" id="month-body"></div>
 </div>
 
 <div class="banner">⚡ Track today. Stronger tomorrow. ⚡</div>
@@ -498,6 +562,174 @@
       syncPrescribed();
     }
   }
+
+  function toISO(d) {
+    const off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+  }
+
+  function startOfWeekMonday(d) {
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(d);
+    monday.setDate(d.getDate() + diff);
+    return monday;
+  }
+
+  function monthRange(d) {
+    const first = new Date(d.getFullYear(), d.getMonth(), 1);
+    const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    return [toISO(first), toISO(last)];
+  }
+
+  function groupByDate(rows) {
+    const groups = [];
+    let current = null;
+    for (const row of rows) {
+      if (!current || current.date !== row.date) {
+        current = { date: row.date, rows: [] };
+        groups.push(current);
+      }
+      current.rows.push(row);
+    }
+    return groups;
+  }
+
+  function renderGroupedRows(container, groups) {
+    if (!groups.length) {
+      container.innerHTML = '<p class="empty-note">Nothing logged in this range yet.</p>';
+      return;
+    }
+    container.innerHTML = groups
+      .map((g) => {
+        const [y, m, d] = g.date.split("-").map(Number);
+        const label = new Date(y, m - 1, d).toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "short",
+          day: "numeric",
+        });
+        const rows = g.rows
+          .map((r) => `<tr><td>${r.phase ?? ""}</td><td>${r.actualWeight ?? ""} lbs</td><td>${r.reps ?? ""}</td></tr>`)
+          .join("");
+        return `<div class="date-group"><h3>${label}</h3><table><thead><tr><th>Phase</th><th>Weight</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      })
+      .join("");
+  }
+
+  function buildLineChartSVG(points) {
+    const width = 300;
+    const height = 130;
+    const padL = 32;
+    const padR = 14;
+    const padT = 18;
+    const padB = 22;
+    const plotW = width - padL - padR;
+    const plotH = height - padT - padB;
+    const weights = points.map((p) => p.weight);
+    const minW = Math.min(...weights);
+    const maxW = Math.max(...weights);
+    const range = maxW - minW || 10;
+    const yFor = (w) => padT + plotH - ((w - minW) / range) * plotH;
+    const xFor = (i) => padL + (points.length === 1 ? plotW / 2 : (i / (points.length - 1)) * plotW);
+
+    const gridW = [minW, maxW]
+      .filter((w, i, arr) => arr.indexOf(w) === i)
+      .map((w) => `<line x1="${padL}" x2="${width - padR}" y1="${yFor(w).toFixed(1)}" y2="${yFor(w).toFixed(1)}" stroke="#3a2f26" stroke-width="1"/><text x="${padL - 6}" y="${(yFor(w) + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="#a99a87">${w}</text>`)
+      .join("");
+
+    const linePoints = points.map((p, i) => `${xFor(i).toFixed(1)},${yFor(p.weight).toFixed(1)}`).join(" ");
+
+    const dots = points
+      .map(
+        (p, i) =>
+          `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(p.weight).toFixed(1)}" r="5" fill="#ffcf7a" stroke="#211b16" stroke-width="2"><title>${p.label}: ${p.weight} lbs</title></circle>`
+      )
+      .join("");
+
+    const xLabels = points
+      .map((p, i) => `<text x="${xFor(i).toFixed(1)}" y="${height - 4}" text-anchor="middle" font-size="8" fill="#a99a87">${p.shortLabel}</text>`)
+      .join("");
+
+    const last = points[points.length - 1];
+    const endLabel = `<text x="${xFor(points.length - 1).toFixed(1)}" y="${(yFor(last.weight) - 11).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#ffcf7a">${last.weight} lbs</text>`;
+
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Weight progression, ending at ${last.weight} lbs">${gridW}<polyline points="${linePoints}" fill="none" stroke="#ffcf7a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}${xLabels}${endLabel}</svg>`;
+  }
+
+  function renderProgression(container, groups) {
+    const byExercise = {};
+    for (const g of groups) {
+      for (const r of g.rows) {
+        if (!r.phase || !(r.phase.startsWith("Working") || r.phase === "Max Attempt")) continue;
+        const ex = r.exercise || "Unknown";
+        if (!byExercise[ex]) byExercise[ex] = {};
+        const w = r.actualWeight ?? 0;
+        byExercise[ex][g.date] = Math.max(byExercise[ex][g.date] ?? 0, w);
+      }
+    }
+
+    const exercises = Object.keys(byExercise);
+    if (!exercises.length) {
+      container.innerHTML = "";
+      return;
+    }
+
+    container.innerHTML = exercises
+      .map((ex) => {
+        const points = Object.entries(byExercise[ex])
+          .sort(([a], [b]) => (a < b ? -1 : 1))
+          .map(([date, weight]) => {
+            const [y, m, d] = date.split("-").map(Number);
+            const parsed = new Date(y, m - 1, d);
+            return {
+              weight,
+              label: parsed.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
+              shortLabel: parsed.toLocaleDateString("en-US", { month: "numeric", day: "numeric" }),
+            };
+          });
+        return `<div class="progression-card"><h3>${ex} — working weight</h3>${buildLineChartSVG(points)}</div>`;
+      })
+      .join("");
+  }
+
+  async function loadRangePanel(container, progressionContainer, start, end) {
+    container.innerHTML = '<p class="empty-note">Loading…</p>';
+    progressionContainer.innerHTML = "";
+    try {
+      const res = await fetch(`${WORKER_URL}/range?start=${start}&end=${end}`);
+      if (!res.ok) throw new Error("bad response");
+      const data = await res.json();
+      const groups = groupByDate(data.rows || []);
+      renderProgression(progressionContainer, groups);
+      renderGroupedRows(container, groups);
+    } catch (e) {
+      container.innerHTML = '<p class="empty-note">Couldn\'t load — check your connection.</p>';
+    }
+  }
+
+  const tabButtons = document.querySelectorAll(".tab-btn");
+  const tabPanels = {
+    today: document.getElementById("tab-today"),
+    week: document.getElementById("tab-week"),
+    month: document.getElementById("tab-month"),
+  };
+
+  function switchTab(name) {
+    for (const btn of tabButtons) btn.classList.toggle("active", btn.dataset.tab === name);
+    for (const key in tabPanels) tabPanels[key].hidden = key !== name;
+
+    if (name === "week") {
+      const monday = startOfWeekMonday(new Date());
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      loadRangePanel(document.getElementById("week-body"), document.getElementById("week-progression"), toISO(monday), toISO(sunday));
+    } else if (name === "month") {
+      const [start, end] = monthRange(new Date());
+      loadRangePanel(document.getElementById("month-body"), document.getElementById("month-progression"), start, end);
+    }
+  }
+
+  tabButtons.forEach((btn) => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();

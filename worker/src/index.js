@@ -103,21 +103,66 @@ async function handleToday(request, env, headers) {
   }
 
   const data = await notionRes.json();
-  const rows = (data.results || []).map((page) => {
-    const p = page.properties;
-    return {
-      exercise: p.Exercise?.select?.name ?? null,
-      week: p.Week?.select?.name ?? null,
-      phase: p.Phase?.select?.name ?? null,
-      setNumber: p["Set Number"]?.number ?? null,
-      targetWeight: p["Target Weight"]?.number ?? null,
-      targetReps: p["Target Reps"]?.rich_text?.[0]?.plain_text ?? "",
-      actualWeight: p["Actual Weight"]?.number ?? null,
-      reps: p.Reps?.number ?? null,
-      notes: p.Notes?.rich_text?.[0]?.plain_text ?? "",
-    };
-  });
+  const rows = (data.results || []).map(rowFromPage);
+  return json({ rows }, 200, headers);
+}
 
+function rowFromPage(page) {
+  const p = page.properties;
+  return {
+    date: p.Date?.date?.start ?? null,
+    exercise: p.Exercise?.select?.name ?? null,
+    week: p.Week?.select?.name ?? null,
+    phase: p.Phase?.select?.name ?? null,
+    setNumber: p["Set Number"]?.number ?? null,
+    targetWeight: p["Target Weight"]?.number ?? null,
+    targetReps: p["Target Reps"]?.rich_text?.[0]?.plain_text ?? "",
+    actualWeight: p["Actual Weight"]?.number ?? null,
+    reps: p.Reps?.number ?? null,
+    notes: p.Notes?.rich_text?.[0]?.plain_text ?? "",
+  };
+}
+
+async function handleRange(request, env, headers) {
+  const url = new URL(request.url);
+  const start = url.searchParams.get("start");
+  const end = url.searchParams.get("end");
+  if (!start || !end) {
+    return json({ error: "Missing start/end query params" }, 400, headers);
+  }
+
+  const notionRes = await fetch(
+    `https://api.notion.com/v1/databases/${env.NOTION_DATABASE_ID}/query`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.NOTION_TOKEN}`,
+        "Notion-Version": NOTION_VERSION,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        filter: {
+          and: [
+            { property: "Date", date: { on_or_after: start } },
+            { property: "Date", date: { on_or_before: end } },
+          ],
+        },
+        sorts: [
+          { property: "Date", direction: "ascending" },
+          { property: "Set Number", direction: "ascending" },
+        ],
+        page_size: 100,
+      }),
+    }
+  );
+
+  if (!notionRes.ok) {
+    const detail = await notionRes.text();
+    return json({ error: "Notion query failed", detail }, 502, headers);
+  }
+
+  const data = await notionRes.json();
+  const rows = (data.results || []).map(rowFromPage);
   return json({ rows }, 200, headers);
 }
 
@@ -136,6 +181,9 @@ export default {
     }
     if (url.pathname === "/today" && request.method === "GET") {
       return handleToday(request, env, headers);
+    }
+    if (url.pathname === "/range" && request.method === "GET") {
+      return handleRange(request, env, headers);
     }
 
     return json({ error: "Not found" }, 404, headers);
