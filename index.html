@@ -57,7 +57,20 @@
     border-color: var(--glow);
   }
   .row { display: flex; gap: 10px; }
-  .row > label { flex: 1; }
+  .row > label, .row > div { flex: 1; }
+  .prescribed {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .prescribed .item { display: flex; flex-direction: column; gap: 4px; }
+  .prescribed .label { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .prescribed .value { font-size: 16px; color: var(--glow-bright); font-weight: 600; }
   button {
     margin-top: 6px;
     padding: 16px;
@@ -90,7 +103,7 @@
   .today table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
+    font-size: 13px;
   }
   .today th, .today td {
     text-align: left;
@@ -115,28 +128,24 @@
   </label>
 
   <label>Week
-    <select id="week" required>
-      <option value="Week 1 - Foundation">Week 1 - Foundation</option>
-      <option value="Week 2 - Neurological Peak">Week 2 - Neurological Peak</option>
-      <option value="Week 3 - De-load">Week 3 - De-load</option>
-      <option value="Week 4 - Max Effort Test">Week 4 - Max Effort Test</option>
-    </select>
+    <select id="week" required></select>
   </label>
 
-  <div class="row">
-    <label>Set #
-      <input type="number" id="setNumber" inputmode="numeric" min="1" step="1" required>
-    </label>
-    <label>Target Weight (lbs)
-      <input type="number" id="targetWeight" inputmode="decimal" step="0.5">
-    </label>
+  <label>Phase
+    <select id="phase" required></select>
+  </label>
+
+  <div class="prescribed">
+    <div class="item"><span class="label">Target Weight</span><span class="value" id="p-weight">—</span></div>
+    <div class="item"><span class="label">Target Reps</span><span class="value" id="p-reps">—</span></div>
+    <div class="item"><span class="label">Rest</span><span class="value" id="p-rest">—</span></div>
   </div>
 
   <div class="row">
     <label>Actual Weight (lbs)
       <input type="number" id="actualWeight" inputmode="decimal" step="0.5" required>
     </label>
-    <label>Reps
+    <label>Actual Reps
       <input type="number" id="reps" inputmode="numeric" min="0" step="1" required>
     </label>
   </div>
@@ -153,7 +162,7 @@
   <h2>Logged today</h2>
   <table>
     <thead>
-      <tr><th>Set</th><th>Exercise</th><th>Weight</th><th>Reps</th></tr>
+      <tr><th>Phase</th><th>Weight</th><th>Reps</th></tr>
     </thead>
     <tbody id="today-body"></tbody>
   </table>
@@ -162,16 +171,52 @@
 <script>
   const WORKER_URL = "https://workout-log-api.chrisflure.workers.dev";
 
-  const weekTargets = {
-    "Week 1 - Foundation": 143,
-    "Week 2 - Neurological Peak": 153,
-    "Week 3 - De-load": 113,
-    "Week 4 - Max Effort Test": 163,
+  // Source of truth: 4-Week Smith Machine Strength Progression Tracker (Incline Bench Press),
+  // corrected 2026-09-06 for the 23 lb Body Masters counterbalanced bar.
+  const WEEK_PLANS = {
+    "Week 1 - Foundation": [
+      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec" },
+      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec" },
+      { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec" },
+      { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min" },
+      { phase: "Working Set 1", weight: 143, reps: "2 reps", rest: "3-5 min" },
+      { phase: "Working Set 2", weight: 143, reps: "2 reps", rest: "3-5 min" },
+      { phase: "Working Set 3", weight: 143, reps: "2 reps", rest: "3-5 min" },
+      { phase: "Working Set 4", weight: 143, reps: "2 reps", rest: "—" },
+    ],
+    "Week 2 - Neurological Peak": [
+      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec" },
+      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec" },
+      { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec" },
+      { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min" },
+      { phase: "Working Set 1", weight: 153, reps: "2 reps", rest: "4-5 min" },
+      { phase: "Working Set 2", weight: 153, reps: "2 reps", rest: "4-5 min" },
+      { phase: "Working Set 3", weight: 153, reps: "2 reps", rest: "—" },
+    ],
+    "Week 3 - De-load": [
+      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec" },
+      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec" },
+      { phase: "Working Set 1", weight: 113, reps: "3 reps (Slow)", rest: "2 min" },
+      { phase: "Working Set 2", weight: 113, reps: "3 reps (Slow)", rest: "2 min" },
+      { phase: "Working Set 3", weight: 113, reps: "3 reps (Slow)", rest: "—" },
+    ],
+    "Week 4 - Max Effort Test": [
+      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec" },
+      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec" },
+      { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec" },
+      { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min" },
+      { phase: "Warm-Up Set 5", weight: 153, reps: "1 rep", rest: "3 min" },
+      { phase: "Max Attempt", weight: 163, reps: "1 rep (Max Effort)", rest: "5 min before retry" },
+    ],
   };
 
   const dateInput = document.getElementById("date");
   const weekSelect = document.getElementById("week");
-  const targetInput = document.getElementById("targetWeight");
+  const phaseSelect = document.getElementById("phase");
+  const pWeight = document.getElementById("p-weight");
+  const pReps = document.getElementById("p-reps");
+  const pRest = document.getElementById("p-rest");
+  const actualWeightInput = document.getElementById("actualWeight");
   const form = document.getElementById("log-form");
   const statusEl = document.getElementById("status");
   const submitBtn = document.getElementById("submit-btn");
@@ -182,14 +227,42 @@
     const off = d.getTimezoneOffset();
     return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
   }
-
   dateInput.value = todayISO();
 
-  function syncTargetToWeek() {
-    targetInput.value = weekTargets[weekSelect.value] ?? "";
+  for (const week of Object.keys(WEEK_PLANS)) {
+    const opt = document.createElement("option");
+    opt.value = week;
+    opt.textContent = week;
+    weekSelect.appendChild(opt);
   }
-  weekSelect.addEventListener("change", syncTargetToWeek);
-  syncTargetToWeek();
+
+  function populatePhases() {
+    phaseSelect.innerHTML = "";
+    for (const step of WEEK_PLANS[weekSelect.value]) {
+      const opt = document.createElement("option");
+      opt.value = step.phase;
+      opt.textContent = `${step.phase} — ${step.weight} lbs`;
+      phaseSelect.appendChild(opt);
+    }
+  }
+
+  function syncPrescribed() {
+    const plan = WEEK_PLANS[weekSelect.value];
+    const step = plan.find((s) => s.phase === phaseSelect.value) || plan[0];
+    pWeight.textContent = `${step.weight} lbs`;
+    pReps.textContent = step.reps;
+    pRest.textContent = step.rest;
+    actualWeightInput.value = step.weight;
+  }
+
+  weekSelect.addEventListener("change", () => {
+    populatePhases();
+    syncPrescribed();
+  });
+  phaseSelect.addEventListener("change", syncPrescribed);
+
+  populatePhases();
+  syncPrescribed();
 
   async function loadToday() {
     try {
@@ -199,7 +272,7 @@
       todayBody.innerHTML = "";
       for (const row of data.rows || []) {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${row.setNumber ?? ""}</td><td>${row.exercise ?? ""}</td><td>${row.actualWeight ?? ""} lbs</td><td>${row.reps ?? ""}</td>`;
+        tr.innerHTML = `<td>${row.phase ?? ""}</td><td>${row.actualWeight ?? ""} lbs</td><td>${row.reps ?? ""}</td>`;
         todayBody.appendChild(tr);
       }
     } catch (e) {
@@ -210,19 +283,34 @@
   dateInput.addEventListener("change", loadToday);
   loadToday();
 
+  function advancePhase() {
+    const plan = WEEK_PLANS[weekSelect.value];
+    const idx = plan.findIndex((s) => s.phase === phaseSelect.value);
+    if (idx >= 0 && idx < plan.length - 1) {
+      phaseSelect.selectedIndex = idx + 1;
+      syncPrescribed();
+    }
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     submitBtn.disabled = true;
     statusEl.className = "";
     statusEl.textContent = "Saving...";
 
+    const plan = WEEK_PLANS[weekSelect.value];
+    const idx = plan.findIndex((s) => s.phase === phaseSelect.value);
+    const step = plan[idx];
+
     const payload = {
       date: dateInput.value,
       exercise: document.getElementById("exercise").value,
       week: weekSelect.value,
-      setNumber: document.getElementById("setNumber").value,
-      targetWeight: targetInput.value || null,
-      actualWeight: document.getElementById("actualWeight").value,
+      phase: step.phase,
+      setNumber: idx + 1,
+      targetWeight: step.weight,
+      targetReps: step.reps,
+      actualWeight: actualWeightInput.value,
       reps: document.getElementById("reps").value,
       notes: document.getElementById("notes").value,
     };
@@ -238,10 +326,9 @@
 
       statusEl.className = "ok";
       statusEl.textContent = "Saved.";
-      document.getElementById("setNumber").value = Number(payload.setNumber) + 1;
-      document.getElementById("actualWeight").value = "";
       document.getElementById("reps").value = "";
       document.getElementById("notes").value = "";
+      advancePhase();
       loadToday();
     } catch (err) {
       statusEl.className = "err";

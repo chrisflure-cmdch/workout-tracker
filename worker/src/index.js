@@ -1,8 +1,8 @@
 const NOTION_VERSION = "2022-06-28";
 
-function cors(origin) {
+function cors() {
   return {
-    "Access-Control-Allow-Origin": origin || "*",
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
@@ -23,19 +23,20 @@ async function handleLog(request, env, headers) {
     return json({ error: "Invalid JSON" }, 400, headers);
   }
 
-  const { date, exercise, week, setNumber, targetWeight, actualWeight, reps, notes } = body;
+  const { date, exercise, week, phase, setNumber, targetWeight, targetReps, actualWeight, reps, notes } = body;
 
-  if (!date || !exercise || !week || setNumber == null || actualWeight == null || reps == null) {
+  if (!date || !exercise || !week || !phase || setNumber == null || actualWeight == null || reps == null) {
     return json({ error: "Missing required field" }, 400, headers);
   }
 
-  const title = `${date} - ${exercise} - Set ${setNumber}`;
+  const title = `${date} - ${exercise} - ${phase}`;
 
   const properties = {
     Name: { title: [{ text: { content: title } }] },
     Date: { date: { start: date } },
     Exercise: { select: { name: exercise } },
     Week: { select: { name: week } },
+    Phase: { select: { name: phase } },
     "Set Number": { number: Number(setNumber) },
     "Actual Weight": { number: Number(actualWeight) },
     Reps: { number: Number(reps) },
@@ -43,6 +44,9 @@ async function handleLog(request, env, headers) {
 
   if (targetWeight != null && targetWeight !== "") {
     properties["Target Weight"] = { number: Number(targetWeight) };
+  }
+  if (targetReps) {
+    properties["Target Reps"] = { rich_text: [{ text: { content: String(targetReps).slice(0, 200) } }] };
   }
   if (notes) {
     properties.Notes = { rich_text: [{ text: { content: String(notes).slice(0, 2000) } }] };
@@ -104,8 +108,10 @@ async function handleToday(request, env, headers) {
     return {
       exercise: p.Exercise?.select?.name ?? null,
       week: p.Week?.select?.name ?? null,
+      phase: p.Phase?.select?.name ?? null,
       setNumber: p["Set Number"]?.number ?? null,
       targetWeight: p["Target Weight"]?.number ?? null,
+      targetReps: p["Target Reps"]?.rich_text?.[0]?.plain_text ?? "",
       actualWeight: p["Actual Weight"]?.number ?? null,
       reps: p.Reps?.number ?? null,
       notes: p.Notes?.rich_text?.[0]?.plain_text ?? "",
@@ -117,8 +123,7 @@ async function handleToday(request, env, headers) {
 
 export default {
   async fetch(request, env) {
-    const origin = request.headers.get("Origin");
-    const headers = cors(origin);
+    const headers = cors();
 
     if (request.method === "OPTIONS") {
       return new Response(null, { headers });
