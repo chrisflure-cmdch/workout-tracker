@@ -260,6 +260,36 @@
   .date-group th, .date-group td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
   .date-group th { color: var(--text-dim); font-weight: 500; }
   .empty-note { color: var(--text-dim); font-size: 14px; text-align: center; padding: 30px 0; }
+  .week-card {
+    max-width: 480px;
+    margin: 0 auto 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .week-card summary {
+    padding: 16px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 14px;
+    color: #9dc3e8;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .week-card summary::-webkit-details-marker { display: none; }
+  .week-card summary::after {
+    content: "▾";
+    color: var(--text-dim);
+    transition: transform 0.15s ease;
+    margin-left: 10px;
+  }
+  .week-card[open] summary::after { transform: rotate(180deg); }
+  .week-card[open] summary { border-bottom: 1px solid var(--line); }
+  .week-card-body { padding: 14px 16px 4px; }
+  .week-card-body .date-group:last-child { margin-bottom: 10px; }
   .progression-card {
     background: var(--panel);
     border: 1px solid var(--line);
@@ -707,23 +737,54 @@
     return groups;
   }
 
+  function buildDateGroupHTML(g) {
+    const [y, m, d] = g.date.split("-").map(Number);
+    const label = new Date(y, m - 1, d).toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    });
+    const rows = g.rows
+      .map((r) => `<tr><td>${r.exercise ?? ""}</td><td>${r.phase ?? ""}</td><td>${r.actualWeight ?? ""} lbs</td><td>${r.reps ?? ""}</td></tr>`)
+      .join("");
+    return `<div class="date-group"><h3>${label}</h3><table><thead><tr><th>Exercise</th><th>Phase</th><th>Weight</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+
   function renderGroupedRows(container, groups) {
     if (!groups.length) {
       container.innerHTML = '<p class="empty-note">Nothing logged in this range yet.</p>';
       return;
     }
-    container.innerHTML = groups
-      .map((g) => {
-        const [y, m, d] = g.date.split("-").map(Number);
-        const label = new Date(y, m - 1, d).toLocaleDateString("en-US", {
-          weekday: "long",
-          month: "short",
-          day: "numeric",
-        });
-        const rows = g.rows
-          .map((r) => `<tr><td>${r.exercise ?? ""}</td><td>${r.phase ?? ""}</td><td>${r.actualWeight ?? ""} lbs</td><td>${r.reps ?? ""}</td></tr>`)
-          .join("");
-        return `<div class="date-group"><h3>${label}</h3><table><thead><tr><th>Exercise</th><th>Phase</th><th>Weight</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    container.innerHTML = groups.map(buildDateGroupHTML).join("");
+  }
+
+  function renderWeekList(container, groups, monthDate) {
+    if (!groups.length) {
+      container.innerHTML = '<p class="empty-note">Nothing logged this month yet.</p>';
+      return;
+    }
+
+    const todayKey = toISO(new Date());
+    const buckets = new Map();
+    for (const g of groups) {
+      const [y, m, d] = g.date.split("-").map(Number);
+      const monday = startOfWeekMonday(new Date(y, m - 1, d));
+      const key = toISO(monday);
+      if (!buckets.has(key)) buckets.set(key, { monday, groups: [] });
+      buckets.get(key).groups.push(g);
+    }
+
+    const fmt = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const sortedKeys = [...buckets.keys()].sort();
+
+    container.innerHTML = sortedKeys
+      .map((key) => {
+        const bucket = buckets.get(key);
+        const sunday = new Date(bucket.monday);
+        sunday.setDate(bucket.monday.getDate() + 6);
+        const isCurrentWeek = todayKey >= toISO(bucket.monday) && todayKey <= toISO(sunday);
+        const body = bucket.groups.map(buildDateGroupHTML).join("");
+        return `<details class="week-card"${isCurrentWeek ? " open" : ""}><summary>Week of ${fmt(bucket.monday)} – ${fmt(sunday)}</summary><div class="week-card-body">${body}</div></details>`;
       })
       .join("");
   }
@@ -811,11 +872,11 @@
     return groupByDate(data.rows || []);
   }
 
-  async function loadRangePanel(container, start, end) {
+  async function loadRangePanel(container, start, end, renderer) {
     container.innerHTML = '<p class="empty-note">Loading…</p>';
     try {
       const groups = await fetchRangeGroups(start, end);
-      renderGroupedRows(container, groups);
+      (renderer || renderGroupedRows)(container, groups);
     } catch (e) {
       container.innerHTML = '<p class="empty-note">Couldn\'t load — check your connection.</p>';
     }
@@ -845,12 +906,11 @@
   const monthLabel = document.getElementById("month-label");
 
   function renderWeek() {
-    const monday = startOfWeekMonday(weekAnchor);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    const fmt = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    weekLabel.textContent = `${fmt(monday)} – ${fmt(sunday)}`;
-    loadRangePanel(document.getElementById("week-body"), toISO(monday), toISO(sunday));
+    const [start, end] = monthRange(weekAnchor);
+    weekLabel.textContent = weekAnchor.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    loadRangePanel(document.getElementById("week-body"), start, end, (container, groups) =>
+      renderWeekList(container, groups, weekAnchor)
+    );
   }
 
   function renderMonth() {
@@ -860,13 +920,11 @@
   }
 
   document.getElementById("week-prev").addEventListener("click", () => {
-    weekAnchor = new Date(weekAnchor);
-    weekAnchor.setDate(weekAnchor.getDate() - 7);
+    weekAnchor = new Date(weekAnchor.getFullYear(), weekAnchor.getMonth() - 1, 1);
     renderWeek();
   });
   document.getElementById("week-next").addEventListener("click", () => {
-    weekAnchor = new Date(weekAnchor);
-    weekAnchor.setDate(weekAnchor.getDate() + 7);
+    weekAnchor = new Date(weekAnchor.getFullYear(), weekAnchor.getMonth() + 1, 1);
     renderWeek();
   });
   document.getElementById("month-prev").addEventListener("click", () => {
