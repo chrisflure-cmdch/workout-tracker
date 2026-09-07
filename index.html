@@ -213,10 +213,10 @@
   .tab-btn {
     flex: 1;
     margin: 0;
-    padding: 10px;
-    font-size: 13px;
+    padding: 10px 4px;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
     border-radius: 10px;
     border: 1px solid var(--line);
     background: var(--panel);
@@ -226,6 +226,7 @@
   .tab-btn.today.active { border-color: var(--glow); color: var(--glow-bright); background: rgba(232, 163, 61, 0.14); }
   .tab-btn.week.active { border-color: var(--accent-blue); color: #9dc3e8; background: rgba(58, 110, 165, 0.18); }
   .tab-btn.month.active { border-color: var(--accent-green); color: #9adf9e; background: rgba(76, 175, 80, 0.14); }
+  .tab-btn.progress.active { border-color: #9085e9; color: #c9c3f7; background: rgba(144, 133, 233, 0.18); }
   .range-view { max-width: 480px; margin: 0 auto; }
   .date-group { margin-bottom: 22px; }
   .date-group h3 { font-size: 14px; color: var(--glow-bright); margin: 0 0 8px; }
@@ -265,6 +266,7 @@
   <button type="button" class="tab-btn today active" data-tab="today">Today</button>
   <button type="button" class="tab-btn week" data-tab="week">Week</button>
   <button type="button" class="tab-btn month" data-tab="month">Month</button>
+  <button type="button" class="tab-btn progress" data-tab="progress">Progress</button>
 </div>
 
 <div id="tab-today" class="tab-panel">
@@ -360,13 +362,15 @@
 </div>
 
 <div id="tab-week" class="tab-panel" hidden>
-  <div class="range-view" id="week-progression"></div>
   <div class="range-view" id="week-body"></div>
 </div>
 
 <div id="tab-month" class="tab-panel" hidden>
-  <div class="range-view" id="month-progression"></div>
   <div class="range-view" id="month-body"></div>
+</div>
+
+<div id="tab-progress" class="tab-panel" hidden>
+  <div class="range-view" id="progress-body"></div>
 </div>
 
 <div class="banner">⚡ Track today. Stronger tomorrow. ⚡</div>
@@ -735,7 +739,7 @@
 
     const exercises = Object.keys(byExercise);
     if (!exercises.length) {
-      container.innerHTML = "";
+      container.innerHTML = '<p class="empty-note">Nothing logged in this range yet.</p>';
       return;
     }
 
@@ -757,16 +761,28 @@
       .join("");
   }
 
-  async function loadRangePanel(container, progressionContainer, start, end) {
+  async function fetchRangeGroups(start, end) {
+    const res = await fetch(`${WORKER_URL}/range?start=${start}&end=${end}`);
+    if (!res.ok) throw new Error("bad response");
+    const data = await res.json();
+    return groupByDate(data.rows || []);
+  }
+
+  async function loadRangePanel(container, start, end) {
     container.innerHTML = '<p class="empty-note">Loading…</p>';
-    progressionContainer.innerHTML = "";
     try {
-      const res = await fetch(`${WORKER_URL}/range?start=${start}&end=${end}`);
-      if (!res.ok) throw new Error("bad response");
-      const data = await res.json();
-      const groups = groupByDate(data.rows || []);
-      renderProgression(progressionContainer, groups);
+      const groups = await fetchRangeGroups(start, end);
       renderGroupedRows(container, groups);
+    } catch (e) {
+      container.innerHTML = '<p class="empty-note">Couldn\'t load — check your connection.</p>';
+    }
+  }
+
+  async function loadProgressPanel(container, start, end) {
+    container.innerHTML = '<p class="empty-note">Loading…</p>';
+    try {
+      const groups = await fetchRangeGroups(start, end);
+      renderProgression(container, groups);
     } catch (e) {
       container.innerHTML = '<p class="empty-note">Couldn\'t load — check your connection.</p>';
     }
@@ -777,6 +793,7 @@
     today: document.getElementById("tab-today"),
     week: document.getElementById("tab-week"),
     month: document.getElementById("tab-month"),
+    progress: document.getElementById("tab-progress"),
   };
 
   function switchTab(name) {
@@ -787,10 +804,13 @@
       const monday = startOfWeekMonday(new Date());
       const sunday = new Date(monday);
       sunday.setDate(monday.getDate() + 6);
-      loadRangePanel(document.getElementById("week-body"), document.getElementById("week-progression"), toISO(monday), toISO(sunday));
+      loadRangePanel(document.getElementById("week-body"), toISO(monday), toISO(sunday));
     } else if (name === "month") {
       const [start, end] = monthRange(new Date());
-      loadRangePanel(document.getElementById("month-body"), document.getElementById("month-progression"), start, end);
+      loadRangePanel(document.getElementById("month-body"), start, end);
+    } else if (name === "progress") {
+      const [start, end] = monthRange(new Date());
+      loadProgressPanel(document.getElementById("progress-body"), start, end);
     }
   }
 
