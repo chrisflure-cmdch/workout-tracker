@@ -1057,7 +1057,11 @@
     for (const btn of tabButtons) btn.classList.toggle("active", btn.dataset.tab === name);
     for (const key in tabPanels) tabPanels[key].hidden = key !== name;
 
-    if (name === "week") {
+    if (name === "today") {
+      dateInput.value = todayISO();
+      syncWeekday();
+      loadToday();
+    } else if (name === "week") {
       weekAnchor = new Date();
       renderWeek();
     } else if (name === "month") {
