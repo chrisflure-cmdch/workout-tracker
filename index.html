@@ -289,6 +289,8 @@
   }
   .week-card[open] summary::after { transform: rotate(180deg); }
   .week-card[open] summary { border-bottom: 1px solid var(--line); }
+  .week-card.current-week { border-color: var(--glow); }
+  .week-card.current-week summary { color: var(--glow-bright); }
   .week-card-body { padding: 14px 16px 4px; }
   .week-card-body .date-group:last-child { margin-bottom: 10px; }
   .progression-card {
@@ -785,7 +787,7 @@
         sunday.setDate(bucket.monday.getDate() + 6);
         const isCurrentWeek = todayKey >= toISO(bucket.monday) && todayKey <= toISO(sunday);
         const body = bucket.groups.map(buildDateGroupHTML).join("");
-        return `<details class="week-card"${isCurrentWeek ? " open" : ""}><summary>Week of ${fmt(bucket.monday)} – ${fmt(sunday)}</summary><div class="week-card-body">${body}</div></details>`;
+        return `<details class="week-card${isCurrentWeek ? " current-week" : ""}"><summary>Week of ${fmt(bucket.monday)} – ${fmt(sunday)}</summary><div class="week-card-body">${body}</div></details>`;
       })
       .join("");
   }
