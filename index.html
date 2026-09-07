@@ -16,18 +16,47 @@
     --glow-bright: #ffcf7a;
     --ok: #6fcf7c;
     --err: #e0665a;
+    --accent-blue: #3a6ea5;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--ground); color: var(--text); }
   body {
     min-height: 100dvh;
     font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-    padding: 20px 16px 60px;
+    padding: 20px 16px 0;
   }
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 6px 0 20px;
+  }
+  .header svg { flex-shrink: 0; }
+  .header svg.blue { color: var(--accent-blue); }
+  .header svg.orange { color: var(--glow-bright); }
   h1 {
-    font-size: 22px;
-    margin: 6px 0 18px;
+    font-size: 24px;
+    letter-spacing: 0.03em;
+    margin: 0;
     color: var(--glow-bright);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .banner {
+    margin: 32px -16px 0;
+    padding: 16px 16px 28px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--glow));
+    color: #fff;
+    text-align: center;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
   }
   form {
     display: flex;
@@ -120,6 +149,40 @@
   }
   #status.ok { color: var(--ok); }
   #status.err { color: var(--err); }
+  .rest-timer {
+    max-width: 480px;
+    margin: 16px auto 0;
+    background: var(--panel);
+    border: 1px solid var(--accent-blue);
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .rest-timer .rest-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .rest-timer .rest-clock {
+    font-size: 40px;
+    font-weight: 800;
+    color: var(--glow-bright);
+    font-variant-numeric: tabular-nums;
+  }
+  .rest-timer.done .rest-clock { color: var(--ok); }
+  .rest-timer button {
+    margin: 0;
+    padding: 10px 22px;
+    font-size: 14px;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    border-radius: 999px;
+  }
   .today {
     max-width: 480px;
     margin: 28px auto 0;
@@ -143,10 +206,17 @@
 </style>
 </head>
 <body>
-<form id="log-form">
+<div class="header">
+  <svg class="orange" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+    <path d="M2 12h2M6 8v8M6 8a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zM9 12h6"/>
+  </svg>
   <h1>Workout Log</h1>
-
-  <label>Date
+  <svg class="blue" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+    <path d="M22 12h-2M18 8v8M18 8a1 1 0 0 0-1-1h-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1zM15 12H9"/>
+  </svg>
+</div>
+<form id="log-form">
+  <label><span>Date <span id="date-weekday" style="color: var(--glow-bright); font-weight: 600;"></span></span>
     <input type="date" id="date" required>
   </label>
 
@@ -188,8 +258,14 @@
   <div id="status"></div>
 </form>
 
+<div class="rest-timer" id="rest-timer" hidden>
+  <span class="rest-label">Rest</span>
+  <span class="rest-clock" id="rest-clock">0:00</span>
+  <button type="button" id="skip-rest">Skip rest</button>
+</div>
+
 <div class="today">
-  <h2>Logged today</h2>
+  <h2 id="today-heading">Logged</h2>
   <table>
     <thead>
       <tr><th>Phase</th><th>Weight</th><th>Reps</th></tr>
@@ -197,6 +273,8 @@
     <tbody id="today-body"></tbody>
   </table>
 </div>
+
+<div class="banner">⚡ Track today. Stronger tomorrow. ⚡</div>
 
 <script>
   const WORKER_URL = "https://workout-log-api.chrisflure.workers.dev";
@@ -252,6 +330,77 @@
   const statusEl = document.getElementById("status");
   const submitBtn = document.getElementById("submit-btn");
   const todayBody = document.getElementById("today-body");
+  const dateWeekday = document.getElementById("date-weekday");
+  const todayHeading = document.getElementById("today-heading");
+  const restTimerEl = document.getElementById("rest-timer");
+  const restClockEl = document.getElementById("rest-clock");
+  const skipRestBtn = document.getElementById("skip-rest");
+
+  function parseRestSeconds(rest) {
+    if (!rest) return null;
+    const range = rest.match(/(\d+)\s*-\s*(\d+)\s*min/);
+    if (range) return parseInt(range[2], 10) * 60;
+    const min = rest.match(/(\d+)\s*min/);
+    if (min) return parseInt(min[1], 10) * 60;
+    const sec = rest.match(/(\d+)\s*sec/);
+    if (sec) return parseInt(sec[1], 10);
+    return null;
+  }
+
+  function beep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+      // audio not available — silent no-op
+    }
+  }
+
+  let restInterval = null;
+
+  function formatClock(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${String(sec).padStart(2, "0")}`;
+  }
+
+  function stopRestTimer() {
+    if (restInterval) {
+      clearInterval(restInterval);
+      restInterval = null;
+    }
+    restTimerEl.hidden = true;
+    restTimerEl.classList.remove("done");
+  }
+
+  function startRestTimer(seconds) {
+    stopRestTimer();
+    let remaining = seconds;
+    restTimerEl.hidden = false;
+    restClockEl.textContent = formatClock(remaining);
+    restInterval = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(restInterval);
+        restInterval = null;
+        restClockEl.textContent = "Go!";
+        restTimerEl.classList.add("done");
+        beep();
+        return;
+      }
+      restClockEl.textContent = formatClock(remaining);
+    }, 1000);
+  }
+
+  skipRestBtn.addEventListener("click", stopRestTimer);
 
   function todayISO() {
     const d = new Date();
@@ -259,6 +408,18 @@
     return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
   }
   dateInput.value = todayISO();
+
+  function syncWeekday() {
+    if (!dateInput.value) { dateWeekday.textContent = ""; todayHeading.textContent = "Logged"; return; }
+    const [y, m, d] = dateInput.value.split("-").map(Number);
+    const parsed = new Date(y, m - 1, d);
+    const weekday = parsed.toLocaleDateString("en-US", { weekday: "long" });
+    const shortDate = parsed.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    dateWeekday.textContent = `— ${weekday}`;
+    todayHeading.textContent = `Logged — ${weekday}, ${shortDate}`;
+  }
+  dateInput.addEventListener("change", syncWeekday);
+  syncWeekday();
 
   for (const week of Object.keys(WEEK_PLANS)) {
     const opt = document.createElement("option");
@@ -300,8 +461,12 @@
   weekSelect.addEventListener("change", () => {
     populatePhases();
     syncPrescribed();
+    stopRestTimer();
   });
-  phaseSelect.addEventListener("change", syncPrescribed);
+  phaseSelect.addEventListener("change", () => {
+    syncPrescribed();
+    stopRestTimer();
+  });
 
   populatePhases();
   syncPrescribed();
@@ -370,6 +535,13 @@
       statusEl.textContent = "Saved.";
       document.getElementById("reps").value = "";
       document.getElementById("notes").value = "";
+
+      const restSeconds = parseRestSeconds(step.rest);
+      if (restSeconds) {
+        startRestTimer(restSeconds);
+      } else {
+        stopRestTimer();
+      }
       advancePhase();
       loadToday();
     } catch (err) {
