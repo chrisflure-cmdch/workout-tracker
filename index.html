@@ -1058,6 +1058,7 @@
     for (const key in tabPanels) tabPanels[key].hidden = key !== name;
 
     if (name === "week") {
+      weekAnchor = new Date();
       renderWeek();
     } else if (name === "month") {
       renderMonth();
