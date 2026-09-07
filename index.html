@@ -71,6 +71,35 @@
   .prescribed .item { display: flex; flex-direction: column; gap: 4px; }
   .prescribed .label { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
   .prescribed .value { font-size: 16px; color: var(--glow-bright); font-weight: 600; }
+  .plates-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 4px 14px 14px;
+  }
+  .plate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 700;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,0.25);
+    flex-shrink: 0;
+  }
+  .plate-45   { width: 46px; height: 46px; background: #3a6ea5; color: #fff; font-size: 13px; }
+  .plate-35   { width: 42px; height: 42px; background: #4caf50; color: #fff; font-size: 12px; }
+  .plate-25   { width: 38px; height: 38px; background: #d4b83a; color: #211b16; font-size: 12px; }
+  .plate-10   { width: 32px; height: 32px; background: #f2e9db; color: #211b16; font-size: 11px; }
+  .plate-5    { width: 24px; height: 24px; background: #e0665a; color: #fff; font-size: 10px; }
+  .plate-2-5  { width: 18px; height: 18px; background: #e88ac6; color: #211b16; font-size: 8px; }
+  .bar-only {
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+    padding: 12px 0;
+  }
   button {
     margin-top: 6px;
     padding: 16px;
@@ -140,6 +169,7 @@
     <div class="item"><span class="label">Target Reps</span><span class="value" id="p-reps">—</span></div>
     <div class="item"><span class="label">Rest</span><span class="value" id="p-rest">—</span></div>
   </div>
+  <div class="plates-row" id="p-plates"></div>
 
   <div class="row">
     <label>Actual Weight (lbs)
@@ -175,38 +205,38 @@
   // corrected 2026-09-06 for the 23 lb Body Masters counterbalanced bar.
   const WEEK_PLANS = {
     "Week 1 - Foundation": [
-      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec" },
-      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec" },
-      { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec" },
-      { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min" },
-      { phase: "Working Set 1", weight: 143, reps: "2 reps", rest: "3-5 min" },
-      { phase: "Working Set 2", weight: 143, reps: "2 reps", rest: "3-5 min" },
-      { phase: "Working Set 3", weight: 143, reps: "2 reps", rest: "3-5 min" },
-      { phase: "Working Set 4", weight: 143, reps: "2 reps", rest: "—" },
+      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
+      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
+      { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec", plates: [45] },
+      { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min", plates: [45, 10] },
+      { phase: "Working Set 1", weight: 143, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 5] },
+      { phase: "Working Set 2", weight: 143, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 5] },
+      { phase: "Working Set 3", weight: 143, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 5] },
+      { phase: "Working Set 4", weight: 143, reps: "2 reps", rest: "—", plates: [45, 10, 5] },
     ],
     "Week 2 - Neurological Peak": [
-      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec" },
-      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec" },
-      { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec" },
-      { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min" },
-      { phase: "Working Set 1", weight: 153, reps: "2 reps", rest: "4-5 min" },
-      { phase: "Working Set 2", weight: 153, reps: "2 reps", rest: "4-5 min" },
-      { phase: "Working Set 3", weight: 153, reps: "2 reps", rest: "—" },
+      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
+      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
+      { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec", plates: [45] },
+      { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min", plates: [45, 10] },
+      { phase: "Working Set 1", weight: 153, reps: "2 reps", rest: "4-5 min", plates: [45, 10, 10] },
+      { phase: "Working Set 2", weight: 153, reps: "2 reps", rest: "4-5 min", plates: [45, 10, 10] },
+      { phase: "Working Set 3", weight: 153, reps: "2 reps", rest: "—", plates: [45, 10, 10] },
     ],
     "Week 3 - De-load": [
-      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec" },
-      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec" },
-      { phase: "Working Set 1", weight: 113, reps: "3 reps (Slow)", rest: "2 min" },
-      { phase: "Working Set 2", weight: 113, reps: "3 reps (Slow)", rest: "2 min" },
-      { phase: "Working Set 3", weight: 113, reps: "3 reps (Slow)", rest: "—" },
+      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
+      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
+      { phase: "Working Set 1", weight: 113, reps: "3 reps (Slow)", rest: "2 min", plates: [45] },
+      { phase: "Working Set 2", weight: 113, reps: "3 reps (Slow)", rest: "2 min", plates: [45] },
+      { phase: "Working Set 3", weight: 113, reps: "3 reps (Slow)", rest: "—", plates: [45] },
     ],
     "Week 4 - Max Effort Test": [
-      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec" },
-      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec" },
-      { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec" },
-      { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min" },
-      { phase: "Warm-Up Set 5", weight: 153, reps: "1 rep", rest: "3 min" },
-      { phase: "Max Attempt", weight: 163, reps: "1 rep (Max Effort)", rest: "5 min before retry" },
+      { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
+      { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
+      { phase: "Warm-Up Set 3", weight: 113, reps: "3 reps", rest: "90 sec", plates: [45] },
+      { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min", plates: [45, 10] },
+      { phase: "Warm-Up Set 5", weight: 153, reps: "1 rep", rest: "3 min", plates: [45, 10, 10] },
+      { phase: "Max Attempt", weight: 163, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [45, 25] },
     ],
   };
 
@@ -216,6 +246,7 @@
   const pWeight = document.getElementById("p-weight");
   const pReps = document.getElementById("p-reps");
   const pRest = document.getElementById("p-rest");
+  const pPlates = document.getElementById("p-plates");
   const actualWeightInput = document.getElementById("actualWeight");
   const form = document.getElementById("log-form");
   const statusEl = document.getElementById("status");
@@ -246,6 +277,16 @@
     }
   }
 
+  function renderPlates(plates) {
+    if (!plates.length) {
+      pPlates.innerHTML = '<span class="bar-only">Bar only — no plates</span>';
+      return;
+    }
+    pPlates.innerHTML = plates
+      .map((w) => `<span class="plate plate-${String(w).replace(".", "-")}">${w}</span>`)
+      .join("");
+  }
+
   function syncPrescribed() {
     const plan = WEEK_PLANS[weekSelect.value];
     const step = plan.find((s) => s.phase === phaseSelect.value) || plan[0];
@@ -253,6 +294,7 @@
     pReps.textContent = step.reps;
     pRest.textContent = step.rest;
     actualWeightInput.value = step.weight;
+    renderPlates(step.plates);
   }
 
   weekSelect.addEventListener("change", () => {
