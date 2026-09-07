@@ -291,6 +291,47 @@
   .week-card[open] summary { border-bottom: 1px solid var(--line); }
   .week-card.current-week { border-color: var(--glow); }
   .week-card.current-week summary { color: var(--glow-bright); }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    max-width: 480px;
+    margin: 0 auto 20px;
+  }
+  .cal-weekday {
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-dim);
+    padding: 0 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0;
+  }
+  .cal-day.other-month {
+    background: transparent;
+    border-color: transparent;
+    color: var(--line);
+    cursor: default;
+  }
+  .cal-day.today { border-color: var(--glow); color: var(--glow-bright); font-weight: 700; }
+  .cal-day.selected { background: rgba(76, 175, 80, 0.18); border-color: var(--accent-green); }
+  .cal-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-green); }
+  .cal-day.today .cal-dot { background: var(--glow-bright); }
   .week-card-body { padding: 14px 16px 4px; }
   .week-card-body .date-group:last-child { margin-bottom: 10px; }
   .progression-card {
@@ -437,7 +478,8 @@
     <span id="month-label"></span>
     <button type="button" id="month-next">Next ›</button>
   </div>
-  <div class="range-view" id="month-body"></div>
+  <div class="range-view" id="month-calendar"></div>
+  <div class="range-view" id="month-day-detail"></div>
 </div>
 
 <div id="tab-progress" class="tab-panel" hidden>
@@ -792,6 +834,57 @@
       .join("");
   }
 
+  function computeCalendarDays(monthDate) {
+    const first = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+    const last = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+    const gridStart = startOfWeekMonday(first);
+    const gridEnd = startOfWeekMonday(last);
+    gridEnd.setDate(gridEnd.getDate() + 6);
+    const days = [];
+    const cur = new Date(gridStart);
+    while (cur <= gridEnd) {
+      days.push(new Date(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    return days;
+  }
+
+  function renderMonthCalendar(container, detailContainer, groups, monthDate) {
+    const groupMap = new Map(groups.map((g) => [g.date, g]));
+    const days = computeCalendarDays(monthDate);
+    const todayKey = toISO(new Date());
+    const monthIndex = monthDate.getMonth();
+
+    const weekdayHeaders = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+      .map((d) => `<div class="cal-weekday">${d}</div>`)
+      .join("");
+
+    const cells = days
+      .map((d) => {
+        const key = toISO(d);
+        const inMonth = d.getMonth() === monthIndex;
+        const hasData = groupMap.has(key);
+        const isToday = key === todayKey;
+        const classes = ["cal-day"];
+        if (!inMonth) classes.push("other-month");
+        if (isToday) classes.push("today");
+        return `<button type="button" class="${classes.join(" ")}" data-date="${key}"${inMonth ? "" : " disabled"}><span>${d.getDate()}</span>${hasData ? '<span class="cal-dot"></span>' : ""}</button>`;
+      })
+      .join("");
+
+    container.innerHTML = `<div class="calendar-grid">${weekdayHeaders}${cells}</div>`;
+    detailContainer.innerHTML = '<p class="empty-note">Tap a day to see its workout.</p>';
+
+    container.querySelectorAll(".cal-day:not(.other-month)").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        container.querySelectorAll(".cal-day.selected").forEach((el) => el.classList.remove("selected"));
+        btn.classList.add("selected");
+        const g = groupMap.get(btn.dataset.date);
+        detailContainer.innerHTML = g ? buildDateGroupHTML(g) : '<p class="empty-note">Nothing logged this day.</p>';
+      });
+    });
+  }
+
   function buildLineChartSVG(points) {
     const width = 300;
     const height = 130;
@@ -919,7 +1012,10 @@
   function renderMonth() {
     const [start, end] = monthRange(monthAnchor);
     monthLabel.textContent = monthAnchor.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-    loadRangePanel(document.getElementById("month-body"), start, end);
+    document.getElementById("month-day-detail").innerHTML = "";
+    loadRangePanel(document.getElementById("month-calendar"), start, end, (container, groups) =>
+      renderMonthCalendar(container, document.getElementById("month-day-detail"), groups, monthAnchor)
+    );
   }
 
   document.getElementById("week-prev").addEventListener("click", () => {
