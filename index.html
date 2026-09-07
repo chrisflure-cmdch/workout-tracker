@@ -249,6 +249,8 @@
     margin: 0 0 6px;
   }
   .progression-card svg { display: block; width: 100%; height: auto; }
+  #custom-fields { display: flex; flex-direction: column; gap: 14px; }
+  #custom-fields[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -299,7 +301,7 @@
     <div class="plates-row" id="p-plates"></div>
   </div>
 
-  <div id="custom-fields" hidden style="display: flex; flex-direction: column; gap: 14px;">
+  <div id="custom-fields" hidden>
     <label>Exercise Name
       <input type="text" id="custom-exercise" placeholder="e.g. Flat Bench Press">
     </label>
