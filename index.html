@@ -748,6 +748,60 @@
     renderPlates(step.plates, Math.max(idx, 0) === plan.length - 1);
   }
 
+  // Week-completion locking: a week is "done" once its last phase has been
+  // logged for this exercise. Done weeks grey out in the dropdown; once all
+  // weeks in the plan are done (Max Attempt included), the cycle resets and
+  // every week unlocks again for the next block. Derived from actual Notion
+  // history (not a separate flag) so it's always true to what's really logged,
+  // and tracked independently per exercise.
+  function computeCompletedWeeks(rows, plan) {
+    const totalWeeks = Object.keys(plan).length;
+    let completed = new Set();
+    for (const row of rows) {
+      const steps = plan[row.week];
+      if (!steps) continue;
+      const lastPhase = steps[steps.length - 1].phase;
+      if (row.phase === lastPhase) {
+        completed.add(row.week);
+        if (completed.size === totalWeeks) completed = new Set();
+      }
+    }
+    return completed;
+  }
+
+  async function refreshWeekLocks() {
+    if (isFreeEntryMode()) return;
+    const plan = currentPlan();
+    const exercise = exerciseSelect.value;
+    let rows;
+    try {
+      const res = await fetch(`${WORKER_URL}/history?exercise=${encodeURIComponent(exercise)}`);
+      if (!res.ok) return;
+      rows = (await res.json()).rows || [];
+    } catch (e) {
+      return; // lock state is a convenience, not critical path
+    }
+    if (exerciseSelect.value !== exercise) return; // exercise changed mid-fetch
+
+    const completed = computeCompletedWeeks(rows, plan);
+    let selectedIsLocked = false;
+    for (const opt of weekSelect.options) {
+      const isDone = completed.has(opt.value);
+      opt.disabled = isDone;
+      opt.textContent = isDone ? `${opt.value} (done)` : opt.value;
+      if (isDone && opt.value === weekSelect.value) selectedIsLocked = true;
+    }
+
+    if (selectedIsLocked) {
+      const nextOpen = Array.from(weekSelect.options).find((o) => !o.disabled);
+      if (nextOpen) {
+        weekSelect.value = nextOpen.value;
+        populatePhases();
+        syncPrescribed();
+      }
+    }
+  }
+
   weekSelect.addEventListener("change", () => {
     populatePhases();
     syncPrescribed();
@@ -761,6 +815,7 @@
   populateWeeks();
   populatePhases();
   syncPrescribed();
+  refreshWeekLocks();
 
   // Only exercises with a coded EXERCISE_PLANS entry (Incline Bench Press, Squat)
   // use the progression fields. Anything else -- true "+ Custom" -- uses the
@@ -792,6 +847,7 @@
       populateWeeks();
       populatePhases();
       syncPrescribed();
+      refreshWeekLocks();
     }
   }
   exerciseSelect.addEventListener("change", toggleExerciseMode);
@@ -1218,6 +1274,7 @@
         customSetNumber.value = Number(customSetNumber.value || 1) + 1;
       } else {
         advancePhase();
+        refreshWeekLocks();
       }
       loadToday();
     } catch (err) {

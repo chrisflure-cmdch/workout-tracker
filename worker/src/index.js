@@ -166,6 +166,58 @@ async function handleRange(request, env, headers) {
   return json({ rows }, 200, headers);
 }
 
+async function handleHistory(request, env, headers) {
+  const url = new URL(request.url);
+  const exercise = url.searchParams.get("exercise");
+  if (!exercise) {
+    return json({ error: "Missing exercise query param" }, 400, headers);
+  }
+
+  const rows = [];
+  let cursor = undefined;
+  for (let page = 0; page < 5; page++) {
+    const notionRes = await fetch(
+      `https://api.notion.com/v1/databases/${env.NOTION_DATABASE_ID}/query`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.NOTION_TOKEN}`,
+          "Notion-Version": NOTION_VERSION,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filter: { property: "Exercise", select: { equals: exercise } },
+          sorts: [
+            { property: "Date", direction: "ascending" },
+            { property: "Set Number", direction: "ascending" },
+          ],
+          page_size: 100,
+          ...(cursor ? { start_cursor: cursor } : {}),
+        }),
+      }
+    );
+
+    if (!notionRes.ok) {
+      const detail = await notionRes.text();
+      return json({ error: "Notion query failed", detail }, 502, headers);
+    }
+
+    const data = await notionRes.json();
+    for (const page of data.results || []) {
+      const p = page.properties;
+      rows.push({
+        date: p.Date?.date?.start ?? null,
+        week: p.Week?.select?.name ?? null,
+        phase: p.Phase?.select?.name ?? null,
+      });
+    }
+    if (!data.has_more) break;
+    cursor = data.next_cursor;
+  }
+
+  return json({ rows }, 200, headers);
+}
+
 export default {
   async fetch(request, env) {
     const headers = cors();
@@ -184,6 +236,9 @@ export default {
     }
     if (url.pathname === "/range" && request.method === "GET") {
       return handleRange(request, env, headers);
+    }
+    if (url.pathname === "/history" && request.method === "GET") {
+      return handleHistory(request, env, headers);
     }
 
     return json({ error: "Not found" }, 404, headers);
