@@ -108,10 +108,17 @@
   .prescribed .value { font-size: 16px; color: var(--glow-bright); font-weight: 600; }
   .plates-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     gap: 8px;
     padding: 4px 14px 14px;
+  }
+  .finished-label {
+    color: var(--err);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.02em;
   }
   .plate {
     display: flex;
@@ -717,24 +724,28 @@
     }
   }
 
-  function renderPlates(plates) {
+  function renderPlates(plates, isLastPhase) {
+    const finishedHtml = isLastPhase
+      ? '<span class="finished-label">Finished for this week</span>'
+      : "";
     if (!plates.length) {
-      pPlates.innerHTML = '<span class="bar-only">Bar only — no plates</span>';
+      pPlates.innerHTML = '<span class="bar-only">Bar only — no plates</span>' + finishedHtml;
       return;
     }
-    pPlates.innerHTML = plates
-      .map((w) => `<span class="plate plate-${String(w).replace(".", "-")}">${w}</span>`)
-      .join("");
+    pPlates.innerHTML =
+      plates.map((w) => `<span class="plate plate-${String(w).replace(".", "-")}">${w}</span>`).join("") +
+      finishedHtml;
   }
 
   function syncPrescribed() {
     const plan = currentPlan()[weekSelect.value];
-    const step = plan.find((s) => s.phase === phaseSelect.value) || plan[0];
+    const idx = plan.findIndex((s) => s.phase === phaseSelect.value);
+    const step = idx >= 0 ? plan[idx] : plan[0];
     pWeight.textContent = `${step.weight} lbs`;
     pReps.textContent = step.reps;
     pRest.textContent = step.rest;
     actualWeightInput.value = step.weight;
-    renderPlates(step.plates);
+    renderPlates(step.plates, Math.max(idx, 0) === plan.length - 1);
   }
 
   weekSelect.addEventListener("change", () => {
