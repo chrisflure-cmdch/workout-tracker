@@ -394,6 +394,7 @@
       <option value="Incline Bench Press">Incline Bench Press</option>
       <option value="Squat (Body Masters PS300)">Squat (Body Masters PS300)</option>
       <option value="Body Masters 310 Chest Press - Vertical">Body Masters 310 Chest Press - Vertical</option>
+      <option value="Precor - Vertical Row 309">Precor - Vertical Row 309</option>
       <option value="__custom__">+ Custom (build as you go)</option>
     </select>
   </label>
@@ -626,11 +627,52 @@
         { phase: "Max Attempt", weight: 220, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
       ],
     },
+    // Precor - Vertical Row 309 added 2026-09-08 for the pin-loaded stack
+    // (base 70 lbs), ramping to a 120 lb max-effort target.
+    "Precor - Vertical Row 309": {
+      "Week 1 - Foundation": [
+        { phase: "Warm-Up Set 1", weight: 70, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 80, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 90, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 100, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 105, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 105, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 105, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 4", weight: 105, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 2 - Neurological Peak": [
+        { phase: "Warm-Up Set 1", weight: 70, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 80, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 90, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 100, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 110, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 110, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 110, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 3 - De-load": [
+        { phase: "Warm-Up Set 1", weight: 70, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 80, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Working Set 1", weight: 90, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 2", weight: 90, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 3", weight: 90, reps: "3 reps (Slow)", rest: "—", plates: [] },
+      ],
+      "Week 4 - Max Effort Test": [
+        { phase: "Warm-Up Set 1", weight: 70, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 80, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 90, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 100, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Warm-Up Set 5", weight: 115, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Max Attempt", weight: 120, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      ],
+    },
   };
 
   // Pin-loaded stack machines have no plates to show -- render the weight as a
   // pin setting instead of "Bar only", which implies an actual barbell.
-  const STACK_LOADED_EXERCISES = new Set(["Body Masters 310 Chest Press - Vertical"]);
+  const STACK_LOADED_EXERCISES = new Set([
+    "Body Masters 310 Chest Press - Vertical",
+    "Precor - Vertical Row 309",
+  ]);
 
   const dateInput = document.getElementById("date");
   const exerciseSelect = document.getElementById("exercise");
