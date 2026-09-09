@@ -396,6 +396,7 @@
       <option value="Body Masters 310 Chest Press - Vertical">Body Masters 310 Chest Press - Vertical</option>
       <option value="Precor - Vertical Row 309">Precor - Vertical Row 309</option>
       <option value="BODY MASTERS CM 240 - Lat Pull-down">BODY MASTERS CM 240 - Lat Pull-down</option>
+      <option value="Nautilus Nitro - Vertical Chest">Nautilus Nitro - Vertical Chest</option>
       <option value="__custom__">+ Custom (build as you go)</option>
     </select>
   </label>
@@ -704,6 +705,44 @@
         { phase: "Max Attempt", weight: 150, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
       ],
     },
+    // Nautilus Nitro - Vertical Chest added 2026-09-08 for the pin-loaded
+    // stack (base 110 lbs), ramping to a 190 lb max-effort target.
+    "Nautilus Nitro - Vertical Chest": {
+      "Week 1 - Foundation": [
+        { phase: "Warm-Up Set 1", weight: 110, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 130, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 150, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 165, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 175, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 175, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 175, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 4", weight: 175, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 2 - Neurological Peak": [
+        { phase: "Warm-Up Set 1", weight: 110, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 130, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 150, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 165, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 180, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 180, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 180, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 3 - De-load": [
+        { phase: "Warm-Up Set 1", weight: 110, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 130, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Working Set 1", weight: 150, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 2", weight: 150, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 3", weight: 150, reps: "3 reps (Slow)", rest: "—", plates: [] },
+      ],
+      "Week 4 - Max Effort Test": [
+        { phase: "Warm-Up Set 1", weight: 110, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 130, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 150, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 165, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Warm-Up Set 5", weight: 185, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Max Attempt", weight: 190, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      ],
+    },
   };
 
   // Pin-loaded stack machines have no plates to show -- render the weight as a
@@ -712,6 +751,7 @@
     "Body Masters 310 Chest Press - Vertical",
     "Precor - Vertical Row 309",
     "BODY MASTERS CM 240 - Lat Pull-down",
+    "Nautilus Nitro - Vertical Chest",
   ]);
 
   const dateInput = document.getElementById("date");
