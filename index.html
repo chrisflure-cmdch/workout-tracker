@@ -393,6 +393,7 @@
     <select id="exercise" required>
       <option value="Incline Bench Press">Incline Bench Press</option>
       <option value="Squat (Body Masters PS300)">Squat (Body Masters PS300)</option>
+      <option value="Body Masters 310 Chest Press - Vertical">Body Masters 310 Chest Press - Vertical</option>
       <option value="__custom__">+ Custom (build as you go)</option>
     </select>
   </label>
@@ -587,7 +588,49 @@
         { phase: "Max Attempt", weight: 262, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [45, 45, 10] },
       ],
     },
+    // Body Masters 310 Chest Press - Vertical added 2026-09-08 for the pin-loaded
+    // stack (base 130 lbs), ramping to a 220 lb max-effort target.
+    "Body Masters 310 Chest Press - Vertical": {
+      "Week 1 - Foundation": [
+        { phase: "Warm-Up Set 1", weight: 130, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 150, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 170, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 190, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 200, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 200, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 200, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 4", weight: 200, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 2 - Neurological Peak": [
+        { phase: "Warm-Up Set 1", weight: 130, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 150, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 170, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 190, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 210, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 210, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 210, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 3 - De-load": [
+        { phase: "Warm-Up Set 1", weight: 130, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 150, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Working Set 1", weight: 170, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 2", weight: 170, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 3", weight: 170, reps: "3 reps (Slow)", rest: "—", plates: [] },
+      ],
+      "Week 4 - Max Effort Test": [
+        { phase: "Warm-Up Set 1", weight: 130, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 150, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 170, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 190, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Warm-Up Set 5", weight: 210, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Max Attempt", weight: 220, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      ],
+    },
   };
+
+  // Pin-loaded stack machines have no plates to show -- render the weight as a
+  // pin setting instead of "Bar only", which implies an actual barbell.
+  const STACK_LOADED_EXERCISES = new Set(["Body Masters 310 Chest Press - Vertical"]);
 
   const dateInput = document.getElementById("date");
   const exerciseSelect = document.getElementById("exercise");
@@ -726,16 +769,20 @@
     }
   }
 
-  function renderPlates(plates, isLastPhase) {
+  function renderPlates(step, isLastPhase, isStack) {
     const finishedHtml = isLastPhase
       ? '<span class="finished-label">Finished for this week</span>'
       : "";
-    if (!plates.length) {
+    if (isStack) {
+      pPlates.innerHTML = `<span class="bar-only">Set pin to ${step.weight} lbs</span>` + finishedHtml;
+      return;
+    }
+    if (!step.plates.length) {
       pPlates.innerHTML = '<span class="bar-only">Bar only — no plates</span>' + finishedHtml;
       return;
     }
     pPlates.innerHTML =
-      plates.map((w) => `<span class="plate plate-${String(w).replace(".", "-")}">${w}</span>`).join("") +
+      step.plates.map((w) => `<span class="plate plate-${String(w).replace(".", "-")}">${w}</span>`).join("") +
       finishedHtml;
   }
 
@@ -747,7 +794,7 @@
     pReps.textContent = step.reps;
     pRest.textContent = step.rest;
     actualWeightInput.value = step.weight;
-    renderPlates(step.plates, Math.max(idx, 0) === plan.length - 1);
+    renderPlates(step, Math.max(idx, 0) === plan.length - 1, STACK_LOADED_EXERCISES.has(exerciseSelect.value));
   }
 
   // Week-completion locking: a week is "done" once its last phase has been
