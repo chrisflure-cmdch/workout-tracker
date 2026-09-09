@@ -92,7 +92,7 @@ async function handleToday(request, env, headers) {
       },
       body: JSON.stringify({
         filter: { property: "Date", date: { equals: date } },
-        sorts: [{ property: "Set Number", direction: "ascending" }],
+        sorts: [{ timestamp: "created_time", direction: "ascending" }],
       }),
     }
   );
