@@ -268,6 +268,25 @@
     text-align: center;
     flex: 1;
   }
+  .today-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .today-header h2 { margin: 0; }
+  .pdf-btn {
+    margin: 0;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    border-radius: 999px;
+    cursor: pointer;
+  }
   .date-group { margin-bottom: 22px; }
   .date-group h3 { font-size: 14px; color: var(--glow-bright); margin: 0 0 8px; }
   .date-group table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -470,7 +489,10 @@
 </div>
 
 <div class="today">
-  <h2 id="today-heading">Logged</h2>
+  <div class="today-header">
+    <h2 id="today-heading">Logged</h2>
+    <button type="button" id="download-pdf-btn" class="pdf-btn">Download PDF</button>
+  </div>
   <table>
     <thead>
       <tr><th>Exercise</th><th>Phase</th><th>Weight</th><th>Reps</th></tr>
@@ -510,6 +532,8 @@
 
 <div class="banner">⚡ Track today. Stronger tomorrow. ⚡</div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script>
   const WORKER_URL = "https://workout-log-api.chrisflure.workers.dev";
 
@@ -1024,13 +1048,16 @@
   exerciseSelect.addEventListener("change", toggleExerciseMode);
   toggleExerciseMode();
 
+  let lastTodayRows = [];
+
   async function loadToday() {
     try {
       const res = await fetch(`${WORKER_URL}/today?date=${encodeURIComponent(dateInput.value)}`);
       if (!res.ok) return;
       const data = await res.json();
+      lastTodayRows = data.rows || [];
       todayBody.innerHTML = "";
-      for (const row of data.rows || []) {
+      for (const row of lastTodayRows) {
         const tr = document.createElement("tr");
         tr.innerHTML = `<td>${row.exercise ?? ""}</td><td>${row.phase ?? ""}</td><td>${row.actualWeight ?? ""} lbs</td><td>${row.reps ?? ""}</td>`;
         todayBody.appendChild(tr);
@@ -1042,6 +1069,41 @@
 
   dateInput.addEventListener("change", loadToday);
   loadToday();
+
+  const downloadPdfBtn = document.getElementById("download-pdf-btn");
+  downloadPdfBtn.addEventListener("click", () => {
+    if (!lastTodayRows.length) {
+      alert("Nothing logged for this date yet.");
+      return;
+    }
+    const [y, m, d] = dateInput.value.split("-").map(Number);
+    const parsed = new Date(y, m - 1, d);
+    const weekday = parsed.toLocaleDateString("en-US", { weekday: "long" });
+    const longDate = parsed.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("WORKOUT LOG", 14, 18);
+    doc.setFontSize(12);
+    doc.text(`${weekday}, ${longDate}`, 14, 26);
+
+    doc.autoTable({
+      startY: 32,
+      head: [["Exercise", "Phase", "Weight", "Reps"]],
+      body: lastTodayRows.map((r) => [
+        r.exercise ?? "",
+        r.phase ?? "",
+        `${r.actualWeight ?? ""} lbs`,
+        String(r.reps ?? ""),
+      ]),
+      styles: { fontSize: 10, cellPadding: 3 },
+      headStyles: { fillColor: [40, 40, 40] },
+      columnStyles: { 0: { cellWidth: 65 }, 1: { cellWidth: 50 } },
+    });
+
+    doc.save(`workout-log-${dateInput.value}.pdf`);
+  });
 
   function advancePhase() {
     const plan = currentPlan()[weekSelect.value];
