@@ -149,7 +149,7 @@ async function handleRange(request, env, headers) {
         },
         sorts: [
           { property: "Date", direction: "ascending" },
-          { property: "Set Number", direction: "ascending" },
+          { timestamp: "created_time", direction: "ascending" },
         ],
         page_size: 100,
       }),
