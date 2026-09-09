@@ -276,6 +276,7 @@
     margin-bottom: 8px;
   }
   .today-header h2 { margin: 0; }
+  .today-header-actions { display: flex; gap: 8px; }
   .pdf-btn {
     margin: 0;
     padding: 8px 16px;
@@ -491,7 +492,10 @@
 <div class="today">
   <div class="today-header">
     <h2 id="today-heading">Logged</h2>
-    <button type="button" id="download-pdf-btn" class="pdf-btn">Download PDF</button>
+    <div class="today-header-actions">
+      <button type="button" id="download-pdf-btn" class="pdf-btn">Download PDF</button>
+      <button type="button" id="email-pdf-btn" class="pdf-btn">Email to Me</button>
+    </div>
   </div>
   <table>
     <thead>
@@ -1070,12 +1074,7 @@
   dateInput.addEventListener("change", loadToday);
   loadToday();
 
-  const downloadPdfBtn = document.getElementById("download-pdf-btn");
-  downloadPdfBtn.addEventListener("click", () => {
-    if (!lastTodayRows.length) {
-      alert("Nothing logged for this date yet.");
-      return;
-    }
+  function buildTodayReportDoc() {
     const [y, m, d] = dateInput.value.split("-").map(Number);
     const parsed = new Date(y, m - 1, d);
     const weekday = parsed.toLocaleDateString("en-US", { weekday: "long" });
@@ -1102,7 +1101,49 @@
       columnStyles: { 0: { cellWidth: 65 }, 1: { cellWidth: 50 } },
     });
 
-    doc.save(`workout-log-${dateInput.value}.pdf`);
+    return doc;
+  }
+
+  const downloadPdfBtn = document.getElementById("download-pdf-btn");
+  downloadPdfBtn.addEventListener("click", () => {
+    if (!lastTodayRows.length) {
+      alert("Nothing logged for this date yet.");
+      return;
+    }
+    buildTodayReportDoc().save(`workout-log-${dateInput.value}.pdf`);
+  });
+
+  const emailPdfBtn = document.getElementById("email-pdf-btn");
+  emailPdfBtn.addEventListener("click", async () => {
+    if (!lastTodayRows.length) {
+      alert("Nothing logged for this date yet.");
+      return;
+    }
+    const originalLabel = emailPdfBtn.textContent;
+    emailPdfBtn.disabled = true;
+    emailPdfBtn.textContent = "Sending...";
+    try {
+      const doc = buildTodayReportDoc();
+      const pdfBase64 = doc.output("datauristring").split(",")[1];
+      const res = await fetch(`${WORKER_URL}/email-report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: dateInput.value,
+          filename: `workout-log-${dateInput.value}.pdf`,
+          pdfBase64,
+        }),
+      });
+      if (!res.ok) throw new Error("Send failed");
+      emailPdfBtn.textContent = "Sent!";
+    } catch (e) {
+      emailPdfBtn.textContent = "Failed";
+    } finally {
+      setTimeout(() => {
+        emailPdfBtn.textContent = originalLabel;
+        emailPdfBtn.disabled = false;
+      }, 2500);
+    }
   });
 
   function advancePhase() {

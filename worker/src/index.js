@@ -74,6 +74,42 @@ async function handleLog(request, env, headers) {
   return json({ ok: true, id: page.id }, 200, headers);
 }
 
+async function handleEmailReport(request, env, headers) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400, headers);
+  }
+
+  const { date, filename, pdfBase64 } = body;
+  if (!date || !filename || !pdfBase64) {
+    return json({ error: "Missing required field" }, 400, headers);
+  }
+
+  const emailRes = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "Workout Log <onboarding@resend.dev>",
+      to: ["chrisflure@gmail.com"],
+      subject: `Workout Log — ${date}`,
+      text: `Your workout log for ${date} is attached.`,
+      attachments: [{ filename, content: pdfBase64 }],
+    }),
+  });
+
+  if (!emailRes.ok) {
+    const detail = await emailRes.text();
+    return json({ error: "Email send failed", detail }, 502, headers);
+  }
+
+  return json({ ok: true }, 200, headers);
+}
+
 async function handleToday(request, env, headers) {
   const url = new URL(request.url);
   const date = url.searchParams.get("date");
@@ -239,6 +275,9 @@ export default {
     }
     if (url.pathname === "/history" && request.method === "GET") {
       return handleHistory(request, env, headers);
+    }
+    if (url.pathname === "/email-report" && request.method === "POST") {
+      return handleEmailReport(request, env, headers);
     }
 
     return json({ error: "Not found" }, 404, headers);
