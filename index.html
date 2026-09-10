@@ -1218,7 +1218,15 @@
     const rows = g.rows
       .map((r) => `<tr><td>${r.exercise ?? ""}</td><td>${r.phase ?? ""}</td><td>${r.actualWeight ?? ""} lbs</td><td>${r.reps ?? ""}</td></tr>`)
       .join("");
-    return `<div class="date-group"><h3>${label}</h3><table><thead><tr><th>Exercise</th><th>Phase</th><th>Weight</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    return `<div class="date-group" data-date="${g.date}"><h3>${label}</h3><table><thead><tr><th>Exercise</th><th>Phase</th><th>Weight</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table>${reportButtonsHTML()}</div>`;
+  }
+
+  function wireDateGroupButtons(root, groups) {
+    const groupMap = new Map(groups.map((g) => [g.date, g]));
+    root.querySelectorAll(".date-group").forEach((el) => {
+      const g = groupMap.get(el.dataset.date);
+      if (g) wireReportButtons(el, g.date, g.rows);
+    });
   }
 
   function renderGroupedRows(container, groups) {
@@ -1258,6 +1266,8 @@
         return `<details class="week-card${isCurrentWeek ? " current-week" : ""}"><summary>Week of ${fmt(bucket.monday)} – ${fmt(sunday)}</summary><div class="week-card-body">${body}</div></details>`;
       })
       .join("");
+
+    wireDateGroupButtons(container, groups);
   }
 
   function computeCalendarDays(monthDate) {
@@ -1310,7 +1320,7 @@
           detailContainer.innerHTML = '<p class="empty-note">Nothing logged this day.</p>';
           return;
         }
-        detailContainer.innerHTML = buildDateGroupHTML(g) + reportButtonsHTML();
+        detailContainer.innerHTML = buildDateGroupHTML(g);
         wireReportButtons(detailContainer, g.date, g.rows);
       });
     });
