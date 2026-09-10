@@ -144,6 +144,7 @@
     letter-spacing: 0.04em;
     padding: 12px 0;
   }
+  .pin-icon { flex-shrink: 0; }
   button {
     margin-top: 6px;
     padding: 16px;
@@ -925,7 +926,19 @@
       ? '<span class="finished-label">Finished for this week</span>'
       : "";
     if (isStack) {
-      pPlates.innerHTML = `<span class="bar-only">Set pin to ${step.weight} lbs</span>` + finishedHtml;
+      pPlates.innerHTML =
+        `<svg class="pin-icon" width="32" height="40" viewBox="0 0 44 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="6" width="26" height="4" rx="1" fill="#4caf50"/>
+          <rect x="6" y="12" width="26" height="4" rx="1" fill="#4caf50"/>
+          <rect x="6" y="18" width="26" height="4" rx="1" fill="#e8a33d"/>
+          <rect x="6" y="24" width="26" height="4" rx="1" fill="#e8a33d"/>
+          <rect x="6" y="30" width="26" height="4" rx="1" fill="#e0665a"/>
+          <rect x="6" y="36" width="26" height="4" rx="1" fill="#e0665a"/>
+          <rect x="6" y="42" width="26" height="4" rx="1" fill="#3a2f26" stroke="#a99a87" stroke-width="0.5"/>
+          <rect x="24" y="16" width="18" height="5" rx="2.5" transform="rotate(-18 24 16)" fill="#ffcf7a" stroke="#e8a33d" stroke-width="1"/>
+          <circle cx="24" cy="16" r="2" fill="#e8a33d"/>
+        </svg>
+        <span class="bar-only">Set pin to ${step.weight} lbs</span>` + finishedHtml;
       return;
     }
     if (!step.plates.length) {
