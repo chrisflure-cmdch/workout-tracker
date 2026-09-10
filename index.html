@@ -277,6 +277,7 @@
   }
   .today-header h2 { margin: 0; }
   .today-header-actions { display: flex; gap: 8px; }
+  .report-actions { margin-top: 10px; }
   .pdf-btn {
     margin: 0;
     padding: 8px 16px;
@@ -1074,8 +1075,8 @@
   dateInput.addEventListener("change", loadToday);
   loadToday();
 
-  function buildTodayReportDoc() {
-    const [y, m, d] = dateInput.value.split("-").map(Number);
+  function buildReportDoc(dateISO, rows) {
+    const [y, m, d] = dateISO.split("-").map(Number);
     const parsed = new Date(y, m - 1, d);
     const weekday = parsed.toLocaleDateString("en-US", { weekday: "long" });
     const longDate = parsed.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
@@ -1090,7 +1091,7 @@
     doc.autoTable({
       startY: 32,
       head: [["Exercise", "Phase", "Weight", "Reps"]],
-      body: lastTodayRows.map((r) => [
+      body: rows.map((r) => [
         r.exercise ?? "",
         r.phase ?? "",
         `${r.actualWeight ?? ""} lbs`,
@@ -1104,46 +1105,66 @@
     return doc;
   }
 
+  async function sendReportEmail(dateISO, rows, btn) {
+    const originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Sending...";
+    try {
+      const doc = buildReportDoc(dateISO, rows);
+      const pdfBase64 = doc.output("datauristring").split(",")[1];
+      const res = await fetch(`${WORKER_URL}/email-report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: dateISO,
+          filename: `workout-log-${dateISO}.pdf`,
+          pdfBase64,
+        }),
+      });
+      if (!res.ok) throw new Error("Send failed");
+      btn.textContent = "Sent!";
+    } catch (e) {
+      btn.textContent = "Failed";
+    } finally {
+      setTimeout(() => {
+        btn.textContent = originalLabel;
+        btn.disabled = false;
+      }, 2500);
+    }
+  }
+
+  function reportButtonsHTML() {
+    return `<div class="today-header-actions report-actions">
+      <button type="button" class="pdf-btn" data-action="download">Download PDF</button>
+      <button type="button" class="pdf-btn" data-action="email">Email to Me</button>
+    </div>`;
+  }
+
+  function wireReportButtons(container, dateISO, rows) {
+    const downloadBtn = container.querySelector('[data-action="download"]');
+    const emailBtn = container.querySelector('[data-action="email"]');
+    downloadBtn.addEventListener("click", () => {
+      buildReportDoc(dateISO, rows).save(`workout-log-${dateISO}.pdf`);
+    });
+    emailBtn.addEventListener("click", () => sendReportEmail(dateISO, rows, emailBtn));
+  }
+
   const downloadPdfBtn = document.getElementById("download-pdf-btn");
   downloadPdfBtn.addEventListener("click", () => {
     if (!lastTodayRows.length) {
       alert("Nothing logged for this date yet.");
       return;
     }
-    buildTodayReportDoc().save(`workout-log-${dateInput.value}.pdf`);
+    buildReportDoc(dateInput.value, lastTodayRows).save(`workout-log-${dateInput.value}.pdf`);
   });
 
   const emailPdfBtn = document.getElementById("email-pdf-btn");
-  emailPdfBtn.addEventListener("click", async () => {
+  emailPdfBtn.addEventListener("click", () => {
     if (!lastTodayRows.length) {
       alert("Nothing logged for this date yet.");
       return;
     }
-    const originalLabel = emailPdfBtn.textContent;
-    emailPdfBtn.disabled = true;
-    emailPdfBtn.textContent = "Sending...";
-    try {
-      const doc = buildTodayReportDoc();
-      const pdfBase64 = doc.output("datauristring").split(",")[1];
-      const res = await fetch(`${WORKER_URL}/email-report`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date: dateInput.value,
-          filename: `workout-log-${dateInput.value}.pdf`,
-          pdfBase64,
-        }),
-      });
-      if (!res.ok) throw new Error("Send failed");
-      emailPdfBtn.textContent = "Sent!";
-    } catch (e) {
-      emailPdfBtn.textContent = "Failed";
-    } finally {
-      setTimeout(() => {
-        emailPdfBtn.textContent = originalLabel;
-        emailPdfBtn.disabled = false;
-      }, 2500);
-    }
+    sendReportEmail(dateInput.value, lastTodayRows, emailPdfBtn);
   });
 
   function advancePhase() {
@@ -1285,7 +1306,12 @@
         container.querySelectorAll(".cal-day.selected").forEach((el) => el.classList.remove("selected"));
         btn.classList.add("selected");
         const g = groupMap.get(btn.dataset.date);
-        detailContainer.innerHTML = g ? buildDateGroupHTML(g) : '<p class="empty-note">Nothing logged this day.</p>';
+        if (!g) {
+          detailContainer.innerHTML = '<p class="empty-note">Nothing logged this day.</p>';
+          return;
+        }
+        detailContainer.innerHTML = buildDateGroupHTML(g) + reportButtonsHTML();
+        wireReportButtons(detailContainer, g.date, g.rows);
       });
     });
   }
