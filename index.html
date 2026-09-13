@@ -433,6 +433,7 @@
       <option value="Nautilus Nitro - Vertical Chest">Nautilus Nitro - Vertical Chest</option>
       <option value="Nautilus Nitro - Overhead Press">Nautilus Nitro - Overhead Press</option>
       <option value="BODY MASTERS CM 282 - Lateral Raise">BODY MASTERS CM 282 - Lateral Raise</option>
+      <option value="BODY MASTERS LE 411 - 45&#176; Super Seated Leg Press">BODY MASTERS LE 411 - 45&#176; Super Seated Leg Press</option>
       <option value="__custom__">+ Custom (build as you go)</option>
     </select>
   </label>
@@ -924,6 +925,47 @@
         { phase: "Max Attempt", weight: 70, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
       ],
     },
+    // BODY MASTERS LE 411 - 45° Super Seated Leg Press added 2026-09-13.
+    // Plate-loaded (empty sled 30 lbs, confirmed by Chris directly -- no
+    // reliable published spec found for this model). Starting weight 55,
+    // max 180. Single grip -- the red handgrips are safety hooks for
+    // entry/exit, not an exercise-position choice.
+    "BODY MASTERS LE 411 - 45° Super Seated Leg Press": {
+      "Week 1 - Foundation": [
+        { phase: "Warm-Up Set 1", weight: 55, reps: "10 reps", rest: "60 sec", plates: [10, 2.5] },
+        { phase: "Warm-Up Set 2", weight: 85, reps: "5 reps", rest: "60 sec", plates: [25, 2.5] },
+        { phase: "Warm-Up Set 3", weight: 115, reps: "3 reps", rest: "90 sec", plates: [25, 10, 5, 2.5] },
+        { phase: "Warm-Up Set 4", weight: 130, reps: "1 rep", rest: "2 min", plates: [45, 5] },
+        { phase: "Working Set 1", weight: 145, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 2.5] },
+        { phase: "Working Set 2", weight: 145, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 2.5] },
+        { phase: "Working Set 3", weight: 145, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 2.5] },
+        { phase: "Working Set 4", weight: 145, reps: "2 reps", rest: "—", plates: [45, 10, 2.5] },
+      ],
+      "Week 2 - Neurological Peak": [
+        { phase: "Warm-Up Set 1", weight: 55, reps: "10 reps", rest: "60 sec", plates: [10, 2.5] },
+        { phase: "Warm-Up Set 2", weight: 85, reps: "5 reps", rest: "60 sec", plates: [25, 2.5] },
+        { phase: "Warm-Up Set 3", weight: 115, reps: "3 reps", rest: "90 sec", plates: [25, 10, 5, 2.5] },
+        { phase: "Warm-Up Set 4", weight: 130, reps: "1 rep", rest: "2 min", plates: [45, 5] },
+        { phase: "Working Set 1", weight: 155, reps: "2 reps", rest: "4-5 min", plates: [45, 10, 5, 2.5] },
+        { phase: "Working Set 2", weight: 155, reps: "2 reps", rest: "4-5 min", plates: [45, 10, 5, 2.5] },
+        { phase: "Working Set 3", weight: 155, reps: "2 reps", rest: "—", plates: [45, 10, 5, 2.5] },
+      ],
+      "Week 3 - De-load": [
+        { phase: "Warm-Up Set 1", weight: 55, reps: "10 reps", rest: "60 sec", plates: [10, 2.5] },
+        { phase: "Warm-Up Set 2", weight: 85, reps: "5 reps", rest: "60 sec", plates: [25, 2.5] },
+        { phase: "Working Set 1", weight: 115, reps: "3 reps (Slow)", rest: "2 min", plates: [25, 10, 5, 2.5] },
+        { phase: "Working Set 2", weight: 115, reps: "3 reps (Slow)", rest: "2 min", plates: [25, 10, 5, 2.5] },
+        { phase: "Working Set 3", weight: 115, reps: "3 reps (Slow)", rest: "—", plates: [25, 10, 5, 2.5] },
+      ],
+      "Week 4 - Max Effort Test": [
+        { phase: "Warm-Up Set 1", weight: 55, reps: "10 reps", rest: "60 sec", plates: [10, 2.5] },
+        { phase: "Warm-Up Set 2", weight: 85, reps: "5 reps", rest: "60 sec", plates: [25, 2.5] },
+        { phase: "Warm-Up Set 3", weight: 115, reps: "3 reps", rest: "90 sec", plates: [25, 10, 5, 2.5] },
+        { phase: "Warm-Up Set 4", weight: 130, reps: "1 rep", rest: "2 min", plates: [45, 5] },
+        { phase: "Warm-Up Set 5", weight: 165, reps: "1 rep", rest: "3 min", plates: [45, 10, 10, 2.5] },
+        { phase: "Max Attempt", weight: 180, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [45, 25, 5] },
+      ],
+    },
   };
 
   // Pin-loaded stack machines have no plates to show -- render the weight as a
@@ -949,6 +991,7 @@
     "Nautilus Nitro - Vertical Chest",
     "Nautilus Nitro - Overhead Press",
     "BODY MASTERS CM 282 - Lateral Raise",
+    "BODY MASTERS LE 411 - 45° Super Seated Leg Press",
   ];
 
   // Category / Workout Day added 2026-09-13. Assigned by muscle group worked
@@ -962,6 +1005,7 @@
     "Nautilus Nitro - Overhead Press": "Shoulders/Bi's & Tri's",
     "BODY MASTERS CM 282 - Lateral Raise": "Shoulders/Bi's & Tri's",
     "Squat (Body Masters PS300)": "Legs",
+    "BODY MASTERS LE 411 - 45° Super Seated Leg Press": "Legs",
   };
 
   const dateInput = document.getElementById("date");
