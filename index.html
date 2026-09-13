@@ -384,6 +384,9 @@
     margin: 0 0 6px;
   }
   .progression-card svg { display: block; width: 100%; height: auto; }
+  .chart-legend { display: flex; gap: 14px; margin-bottom: 4px; flex-wrap: wrap; }
+  .legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-dim); }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
   #custom-fields { display: flex; flex-direction: column; gap: 14px; }
 </style>
 </head>
@@ -419,6 +422,7 @@
       <option value="Precor - Vertical Row 309">Precor - Vertical Row 309</option>
       <option value="BODY MASTERS CM 240 - Lat Pull-down">BODY MASTERS CM 240 - Lat Pull-down</option>
       <option value="Nautilus Nitro - Vertical Chest">Nautilus Nitro - Vertical Chest</option>
+      <option value="Nautilus Nitro - Overhead Press">Nautilus Nitro - Overhead Press</option>
       <option value="__custom__">+ Custom (build as you go)</option>
     </select>
   </label>
@@ -774,6 +778,73 @@
         { phase: "Max Attempt", weight: 190, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
       ],
     },
+    // Nautilus Nitro - Overhead Press added 2026-09-13. One machine, one
+    // exercise entry -- Chris's outer grip is weaker than his inner grip, so
+    // every rung alternates Outer then Inner at the same rep/rest step; he
+    // just moves the pin between the two calls. Kept as one exercise (one
+    // week-completion cycle) rather than two, per his request.
+    "Nautilus Nitro - Overhead Press": {
+      "Week 1 - Foundation": [
+        { phase: "Warm-Up Set 1 (Outer)", weight: 50, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 1 (Inner)", weight: 65, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2 (Outer)", weight: 80, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2 (Inner)", weight: 95, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3 (Outer)", weight: 110, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 3 (Inner)", weight: 125, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4 (Outer)", weight: 125, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Warm-Up Set 4 (Inner)", weight: 140, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1 (Outer)", weight: 140, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 1 (Inner)", weight: 155, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 2 (Outer)", weight: 140, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 2 (Inner)", weight: 155, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 3 (Outer)", weight: 140, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 3 (Inner)", weight: 155, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 4 (Outer)", weight: 140, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 4 (Inner)", weight: 155, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 2 - Neurological Peak": [
+        { phase: "Warm-Up Set 1 (Outer)", weight: 50, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 1 (Inner)", weight: 65, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2 (Outer)", weight: 80, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2 (Inner)", weight: 95, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3 (Outer)", weight: 110, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 3 (Inner)", weight: 125, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4 (Outer)", weight: 125, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Warm-Up Set 4 (Inner)", weight: 140, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1 (Outer)", weight: 150, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 1 (Inner)", weight: 165, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 2 (Outer)", weight: 150, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 2 (Inner)", weight: 165, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 3 (Outer)", weight: 150, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 3 (Inner)", weight: 165, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 3 - De-load": [
+        { phase: "Warm-Up Set 1 (Outer)", weight: 50, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 1 (Inner)", weight: 65, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2 (Outer)", weight: 80, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2 (Inner)", weight: 95, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Working Set 1 (Outer)", weight: 110, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 1 (Inner)", weight: 125, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 2 (Outer)", weight: 110, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 2 (Inner)", weight: 125, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 3 (Outer)", weight: 110, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 3 (Inner)", weight: 125, reps: "3 reps (Slow)", rest: "—", plates: [] },
+      ],
+      "Week 4 - Max Effort Test": [
+        { phase: "Warm-Up Set 1 (Outer)", weight: 50, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 1 (Inner)", weight: 65, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2 (Outer)", weight: 80, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2 (Inner)", weight: 95, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3 (Outer)", weight: 110, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 3 (Inner)", weight: 125, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4 (Outer)", weight: 125, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Warm-Up Set 4 (Inner)", weight: 140, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Warm-Up Set 5 (Outer)", weight: 160, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Warm-Up Set 5 (Inner)", weight: 175, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Max Attempt (Outer)", weight: 165, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+        { phase: "Max Attempt (Inner)", weight: 185, reps: "1 rep (Max Effort)", rest: "—", plates: [] },
+      ],
+    },
   };
 
   // Pin-loaded stack machines have no plates to show -- render the weight as a
@@ -783,6 +854,7 @@
     "Precor - Vertical Row 309",
     "BODY MASTERS CM 240 - Lat Pull-down",
     "Nautilus Nitro - Vertical Chest",
+    "Nautilus Nitro - Overhead Press",
   ]);
 
   const dateInput = document.getElementById("date");
@@ -1379,15 +1451,115 @@
     return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Weight progression, ending at ${last.weight} lbs">${gridW}<polyline points="${linePoints}" fill="none" stroke="#ffcf7a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}${xLabels}${endLabel}</svg>`;
   }
 
+  // Multiple series (e.g. Outer/Inner grip) on one shared axis. Identity rides
+  // on line/dot color plus the legend, never on the end-value labels -- those
+  // stay in neutral ink per the dataviz skill's "text is never the series
+  // color" rule.
+  function buildMultiLineChartSVG(series) {
+    const width = 300;
+    const height = 130;
+    const padL = 32;
+    const padR = 14;
+    const padT = 18;
+    const padB = 22;
+    const plotW = width - padL - padR;
+    const plotH = height - padT - padB;
+
+    const allDates = Array.from(new Set(series.flatMap((s) => s.points.map((p) => p.date)))).sort();
+    const weights = series.flatMap((s) => s.points.map((p) => p.weight));
+    const minW = Math.min(...weights);
+    const maxW = Math.max(...weights);
+    const range = maxW - minW || 10;
+    const yFor = (w) => padT + plotH - ((w - minW) / range) * plotH;
+    const xFor = (i) => padL + (allDates.length === 1 ? plotW / 2 : (i / (allDates.length - 1)) * plotW);
+
+    const gridW = [minW, maxW]
+      .filter((w, i, arr) => arr.indexOf(w) === i)
+      .map((w) => `<line x1="${padL}" x2="${width - padR}" y1="${yFor(w).toFixed(1)}" y2="${yFor(w).toFixed(1)}" stroke="#3a2f26" stroke-width="1"/><text x="${padL - 6}" y="${(yFor(w) + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="#a99a87">${w}</text>`)
+      .join("");
+
+    const xLabels = allDates
+      .map((d, i) => {
+        const [y, m, dd] = d.split("-").map(Number);
+        const shortLabel = new Date(y, m - 1, dd).toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
+        return `<text x="${xFor(i).toFixed(1)}" y="${height - 4}" text-anchor="middle" font-size="8" fill="#a99a87">${shortLabel}</text>`;
+      })
+      .join("");
+
+    // Rank series by their final value so end-labels stack away from each
+    // other instead of colliding when two lines finish close together --
+    // the highest line labels above its dot, every other line labels below.
+    const endRank = [...series]
+      .map((s, idx) => ({ idx, last: s.points.length ? s.points[s.points.length - 1].weight : -Infinity }))
+      .sort((a, b) => b.last - a.last);
+    const rankByIdx = new Map(endRank.map((r, rank) => [r.idx, rank]));
+
+    const seriesSVG = series
+      .map((s, idx) => {
+        const byDate = new Map(s.points.map((p) => [p.date, p.weight]));
+        const present = allDates
+          .map((d, i) => (byDate.has(d) ? { i, date: d, weight: byDate.get(d) } : null))
+          .filter(Boolean);
+        const linePoints = present.map((p) => `${xFor(p.i).toFixed(1)},${yFor(p.weight).toFixed(1)}`).join(" ");
+        const dots = present
+          .map(
+            (p) =>
+              `<circle cx="${xFor(p.i).toFixed(1)}" cy="${yFor(p.weight).toFixed(1)}" r="5" fill="${s.color}" stroke="#211b16" stroke-width="2"><title>${s.label} — ${p.date}: ${p.weight} lbs</title></circle>`
+          )
+          .join("");
+        const lastPresent = present[present.length - 1];
+        const rank = rankByIdx.get(idx);
+        const dy = rank === 0 ? -11 : 16 + (rank - 1) * 12;
+        const endLabel = lastPresent
+          ? `<text x="${xFor(lastPresent.i).toFixed(1)}" y="${(yFor(lastPresent.weight) + dy).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#e5e2da">${lastPresent.weight} lbs</text>`
+          : "";
+        return `<polyline points="${linePoints}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}${endLabel}`;
+      })
+      .join("");
+
+    const ariaLabel = series
+      .map((s) => `${s.label} ending at ${s.points.length ? s.points[s.points.length - 1].weight : "—"} lbs`)
+      .join("; ");
+
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Weight progression — ${ariaLabel}">${gridW}${seriesSVG}${xLabels}</svg>`;
+  }
+
+  // Fixed per the dataviz skill's categorical order (slots 1/2, dark mode --
+  // this site is dark-only): validated pair, worst-case adjacent CVD Delta E
+  // 26.8 / normal-vision Delta E 31.8, both well clear of the floors.
+  const GRIP_COLORS = { Outer: "#3987e5", Inner: "#d95926" };
+
+  function datePointsFrom(dateMap) {
+    return Object.entries(dateMap)
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([date, weight]) => {
+        const [y, m, d] = date.split("-").map(Number);
+        const parsed = new Date(y, m - 1, d);
+        return {
+          date,
+          weight,
+          label: parsed.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
+          shortLabel: parsed.toLocaleDateString("en-US", { month: "numeric", day: "numeric" }),
+        };
+      });
+  }
+
   function renderProgression(container, groups) {
     const byExercise = {};
     for (const g of groups) {
       for (const r of g.rows) {
-        if (!r.phase || !(r.phase.startsWith("Working") || r.phase === "Max Attempt")) continue;
+        if (!r.phase || !(r.phase.startsWith("Working") || r.phase.startsWith("Max Attempt"))) continue;
+        // Multi-grip exercises (phase ends "(Outer)"/"(Inner)") get tracked as
+        // separate series under the same exercise -- otherwise a same-day
+        // Math.max would let the stronger grip's weight silently swallow the
+        // weaker grip's data.
+        const gripMatch = r.phase.match(/\((Outer|Inner)\)$/);
         const ex = r.exercise || "Unknown";
+        const grip = gripMatch ? gripMatch[1] : "_single";
         if (!byExercise[ex]) byExercise[ex] = {};
+        if (!byExercise[ex][grip]) byExercise[ex][grip] = {};
         const w = r.actualWeight ?? 0;
-        byExercise[ex][g.date] = Math.max(byExercise[ex][g.date] ?? 0, w);
+        byExercise[ex][grip][g.date] = Math.max(byExercise[ex][grip][g.date] ?? 0, w);
       }
     }
 
@@ -1399,18 +1571,21 @@
 
     container.innerHTML = exercises
       .map((ex) => {
-        const points = Object.entries(byExercise[ex])
-          .sort(([a], [b]) => (a < b ? -1 : 1))
-          .map(([date, weight]) => {
-            const [y, m, d] = date.split("-").map(Number);
-            const parsed = new Date(y, m - 1, d);
-            return {
-              weight,
-              label: parsed.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
-              shortLabel: parsed.toLocaleDateString("en-US", { month: "numeric", day: "numeric" }),
-            };
-          });
-        return `<div class="progression-card"><h3>${ex} — working weight</h3>${buildLineChartSVG(points)}</div>`;
+        const grips = byExercise[ex];
+        const gripKeys = Object.keys(grips);
+        if (gripKeys.length === 1 && gripKeys[0] === "_single") {
+          const points = datePointsFrom(grips["_single"]);
+          return `<div class="progression-card"><h3>${ex} — working weight</h3>${buildLineChartSVG(points)}</div>`;
+        }
+        const series = gripKeys.map((k) => ({
+          label: `${k} Grip`,
+          color: GRIP_COLORS[k] || "#ffcf7a",
+          points: datePointsFrom(grips[k]),
+        }));
+        const legend = `<div class="chart-legend">${series
+          .map((s) => `<span class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span>${s.label}</span>`)
+          .join("")}</div>`;
+        return `<div class="progression-card"><h3>${ex} — working weight</h3>${legend}${buildMultiLineChartSVG(series)}</div>`;
       })
       .join("");
   }
