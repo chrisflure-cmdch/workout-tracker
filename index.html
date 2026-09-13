@@ -434,6 +434,7 @@
       <option value="Nautilus Nitro - Overhead Press">Nautilus Nitro - Overhead Press</option>
       <option value="BODY MASTERS CM 282 - Lateral Raise">BODY MASTERS CM 282 - Lateral Raise</option>
       <option value="BODY MASTERS LE 411 - 45&#176; Super Seated Leg Press">BODY MASTERS LE 411 - 45&#176; Super Seated Leg Press</option>
+      <option value="Hoist ROC-IT - Leg Curl">Hoist ROC-IT - Leg Curl</option>
       <option value="__custom__">+ Custom (build as you go)</option>
     </select>
   </label>
@@ -966,6 +967,46 @@
         { phase: "Max Attempt", weight: 180, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [45, 25, 5] },
       ],
     },
+    // Hoist ROC-IT - Leg Curl (RS-1402) added 2026-09-13. Pin-loaded stack
+    // (base 40 lbs, 90 lb max). Single grip -- handles are for stability
+    // only, one fixed seated position. Mirrors the Row's proven +10/+5-step
+    // shape (same 50 lb total range).
+    "Hoist ROC-IT - Leg Curl": {
+      "Week 1 - Foundation": [
+        { phase: "Warm-Up Set 1", weight: 40, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 50, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 60, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 75, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 75, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 75, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 4", weight: 75, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 2 - Neurological Peak": [
+        { phase: "Warm-Up Set 1", weight: 40, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 50, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 60, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 80, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 80, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 80, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 3 - De-load": [
+        { phase: "Warm-Up Set 1", weight: 40, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 50, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Working Set 1", weight: 60, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 2", weight: 60, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 3", weight: 60, reps: "3 reps (Slow)", rest: "—", plates: [] },
+      ],
+      "Week 4 - Max Effort Test": [
+        { phase: "Warm-Up Set 1", weight: 40, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 50, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 60, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Warm-Up Set 5", weight: 85, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Max Attempt", weight: 90, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      ],
+    },
   };
 
   // Pin-loaded stack machines have no plates to show -- render the weight as a
@@ -977,6 +1018,7 @@
     "Nautilus Nitro - Vertical Chest",
     "Nautilus Nitro - Overhead Press",
     "BODY MASTERS CM 282 - Lateral Raise",
+    "Hoist ROC-IT - Leg Curl",
   ]);
 
   // The Exercise dropdown's full option list (source of truth for
@@ -992,6 +1034,7 @@
     "Nautilus Nitro - Overhead Press",
     "BODY MASTERS CM 282 - Lateral Raise",
     "BODY MASTERS LE 411 - 45° Super Seated Leg Press",
+    "Hoist ROC-IT - Leg Curl",
   ];
 
   // Category / Workout Day added 2026-09-13. Assigned by muscle group worked
@@ -1006,6 +1049,7 @@
     "BODY MASTERS CM 282 - Lateral Raise": "Shoulders/Bi's & Tri's",
     "Squat (Body Masters PS300)": "Legs",
     "BODY MASTERS LE 411 - 45° Super Seated Leg Press": "Legs",
+    "Hoist ROC-IT - Leg Curl": "Legs",
   };
 
   const dateInput = document.getElementById("date");
