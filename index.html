@@ -414,6 +414,15 @@
     <input type="date" id="date" required>
   </label>
 
+  <label>Category / Workout Day
+    <select id="category">
+      <option value="">All Exercises</option>
+      <option value="Chest and Back">Chest and Back</option>
+      <option value="Shoulders/Bi's &amp; Tri's">Shoulders/Bi's &amp; Tri's</option>
+      <option value="Legs">Legs</option>
+    </select>
+  </label>
+
   <label>Exercise
     <select id="exercise" required>
       <option value="Incline Bench Press">Incline Bench Press</option>
@@ -884,7 +893,33 @@
     "Nautilus Nitro - Overhead Press",
   ]);
 
+  // The Exercise dropdown's full option list (source of truth for
+  // populateExerciseOptions, below) -- keep this in sync with EXERCISE_PLANS'
+  // keys whenever an exercise is added.
+  const ALL_EXERCISES = [
+    "Incline Bench Press",
+    "Squat (Body Masters PS300)",
+    "Body Masters 310 Chest Press - Vertical",
+    "Precor - Vertical Row 309",
+    "BODY MASTERS CM 240 - Lat Pull-down",
+    "Nautilus Nitro - Vertical Chest",
+    "Nautilus Nitro - Overhead Press",
+  ];
+
+  // Category / Workout Day added 2026-09-13. Assigned by muscle group worked
+  // (per each machine's own "Major Muscles Worked" callout where available).
+  const EXERCISE_CATEGORIES = {
+    "Incline Bench Press": "Chest and Back",
+    "Body Masters 310 Chest Press - Vertical": "Chest and Back",
+    "Precor - Vertical Row 309": "Chest and Back",
+    "BODY MASTERS CM 240 - Lat Pull-down": "Chest and Back",
+    "Nautilus Nitro - Vertical Chest": "Chest and Back",
+    "Nautilus Nitro - Overhead Press": "Shoulders/Bi's & Tri's",
+    "Squat (Body Masters PS300)": "Legs",
+  };
+
   const dateInput = document.getElementById("date");
+  const categorySelect = document.getElementById("category");
   const exerciseSelect = document.getElementById("exercise");
   const standardFields = document.getElementById("standard-fields");
   const customFields = document.getElementById("custom-fields");
@@ -1163,7 +1198,21 @@
       refreshWeekLocks();
     }
   }
+  function populateExerciseOptions() {
+    const cat = categorySelect.value;
+    const prevValue = exerciseSelect.value;
+    const filtered = cat ? ALL_EXERCISES.filter((name) => EXERCISE_CATEGORIES[name] === cat) : ALL_EXERCISES;
+    exerciseSelect.innerHTML =
+      filtered.map((name) => `<option value="${name}">${name}</option>`).join("") +
+      `<option value="__custom__">+ Custom (build as you go)</option>`;
+    exerciseSelect.value = filtered.includes(prevValue) || prevValue === "__custom__" ? prevValue : filtered[0] || "__custom__";
+  }
+  categorySelect.addEventListener("change", () => {
+    populateExerciseOptions();
+    toggleExerciseMode();
+  });
   exerciseSelect.addEventListener("change", toggleExerciseMode);
+  populateExerciseOptions();
   toggleExerciseMode();
 
   let lastTodayRows = [];
