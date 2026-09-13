@@ -432,6 +432,7 @@
       <option value="BODY MASTERS CM 240 - Lat Pull-down">BODY MASTERS CM 240 - Lat Pull-down</option>
       <option value="Nautilus Nitro - Vertical Chest">Nautilus Nitro - Vertical Chest</option>
       <option value="Nautilus Nitro - Overhead Press">Nautilus Nitro - Overhead Press</option>
+      <option value="BODY MASTERS CM 282 - Lateral Raise">BODY MASTERS CM 282 - Lateral Raise</option>
       <option value="__custom__">+ Custom (build as you go)</option>
     </select>
   </label>
@@ -881,6 +882,48 @@
         { phase: "Max Attempt (Inner)", weight: 185, reps: "1 rep (Max Effort)", rest: "—", plates: [] },
       ],
     },
+    // BODY MASTERS CM 282 - Lateral Raise added 2026-09-13 (base 30 lbs,
+    // 70 lb max). Single grip -- elbow/forearm roller pads, not hand grips,
+    // confirmed with Chris. Machine only moves in 10 lb steps with a 40 lb
+    // total range, too tight for the usual full-size ramp, so per Chris's
+    // choice the warm-up ramp is compressed (Warm-Up 3/4 share 50 lbs) to
+    // keep Working Sets (60) and the Max Attempt (70) as distinct weights.
+    "BODY MASTERS CM 282 - Lateral Raise": {
+      "Week 1 - Foundation": [
+        { phase: "Warm-Up Set 1", weight: 30, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 50, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 60, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 60, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 60, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 4", weight: 60, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 2 - Neurological Peak": [
+        { phase: "Warm-Up Set 1", weight: 30, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 50, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 60, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 60, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 60, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 3 - De-load": [
+        { phase: "Warm-Up Set 1", weight: 30, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Working Set 1", weight: 50, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 2", weight: 50, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 3", weight: 50, reps: "3 reps (Slow)", rest: "—", plates: [] },
+      ],
+      "Week 4 - Max Effort Test": [
+        { phase: "Warm-Up Set 1", weight: 30, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 50, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Warm-Up Set 5", weight: 60, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Max Attempt", weight: 70, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      ],
+    },
   };
 
   // Pin-loaded stack machines have no plates to show -- render the weight as a
@@ -891,6 +934,7 @@
     "BODY MASTERS CM 240 - Lat Pull-down",
     "Nautilus Nitro - Vertical Chest",
     "Nautilus Nitro - Overhead Press",
+    "BODY MASTERS CM 282 - Lateral Raise",
   ]);
 
   // The Exercise dropdown's full option list (source of truth for
@@ -904,6 +948,7 @@
     "BODY MASTERS CM 240 - Lat Pull-down",
     "Nautilus Nitro - Vertical Chest",
     "Nautilus Nitro - Overhead Press",
+    "BODY MASTERS CM 282 - Lateral Raise",
   ];
 
   // Category / Workout Day added 2026-09-13. Assigned by muscle group worked
@@ -915,6 +960,7 @@
     "BODY MASTERS CM 240 - Lat Pull-down": "Chest and Back",
     "Nautilus Nitro - Vertical Chest": "Chest and Back",
     "Nautilus Nitro - Overhead Press": "Shoulders/Bi's & Tri's",
+    "BODY MASTERS CM 282 - Lateral Raise": "Shoulders/Bi's & Tri's",
     "Squat (Body Masters PS300)": "Legs",
   };
 
