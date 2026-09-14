@@ -1010,44 +1010,46 @@
         { phase: "Max Attempt", weight: 90, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
       ],
     },
-    // Hoist ROC-IT - Leg Extension (RS-1401) added 2026-09-13. Pin-loaded
-    // stack (base 30 lbs, 70 lb max) -- identical range to the Lateral Raise,
-    // so reused that exercise's compressed ramp shape (Warm-Up 3/4 share
-    // 50 lbs) to keep Working Sets (60) and the Max Attempt (70) distinct.
+    // Hoist ROC-IT - Leg Extension (RS-1401) added 2026-09-13, re-anchored
+    // same day to real stack-chart pin values after Chris's first logged
+    // session (Pin 2/4/5/6/8 = 44/66/78/91/126, per his notes -- 126
+    // reconciled as Pin 8 for his body weight, not the printed chart's 115,
+    // after an app auto-advance glitch produced one inconsistent log entry).
+    // Same rep scheme as before; only the weights changed.
     "Hoist ROC-IT - Leg Extension": {
       "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 30, reps: "10 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 50, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Working Set 1", weight: 60, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 60, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 60, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 60, reps: "2 reps", rest: "—", plates: [] },
+        { phase: "Warm-Up Set 1", weight: 44, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 66, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 78, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 91, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 102, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 115, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 115, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 4", weight: 115, reps: "2 reps", rest: "—", plates: [] },
       ],
       "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 30, reps: "10 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 50, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Working Set 1", weight: 60, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 60, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 60, reps: "2 reps", rest: "—", plates: [] },
+        { phase: "Warm-Up Set 1", weight: 44, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 66, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 78, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 91, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 102, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 115, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 115, reps: "2 reps", rest: "—", plates: [] },
       ],
       "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 30, reps: "10 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Working Set 1", weight: 50, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 50, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 50, reps: "3 reps (Slow)", rest: "—", plates: [] },
+        { phase: "Warm-Up Set 1", weight: 44, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 66, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Working Set 1", weight: 78, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 2", weight: 78, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 3", weight: 78, reps: "3 reps (Slow)", rest: "—", plates: [] },
       ],
       "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 30, reps: "10 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 50, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 60, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 70, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+        { phase: "Warm-Up Set 1", weight: 44, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 66, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 78, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 91, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Warm-Up Set 5", weight: 126, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Max Attempt", weight: 138, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
       ],
     },
     // Body Masters - Standing Calf Raise added 2026-09-13. Pin-loaded stack
@@ -1182,6 +1184,23 @@
     "Hoist ROC-IT - Leg Extension": "Legs",
     "Body Masters - Standing Calf Raise": "Legs",
     "Eagle by Cybex - Leg Press": "Legs",
+  };
+
+  // Real pin number + color, confirmed from Chris's own logged notes against
+  // the machine's stack chart (not guessed) -- shown next to "Set pin to N
+  // lbs" for weights he's actually verified. A weight with no entry here
+  // just shows the plain text, since the pin isn't confirmed yet.
+  const PIN_INFO = {
+    "Hoist ROC-IT - Leg Extension": {
+      44: { pin: 2, color: "red" },
+      66: { pin: 4, color: "red" },
+      78: { pin: 5, color: "red" },
+      91: { pin: 6, color: "red" },
+      102: { pin: 7, color: "white" },
+      115: { pin: 8, color: "white" },
+      126: { pin: 9, color: "white" },
+      138: { pin: 10, color: "white" },
+    },
   };
 
   const dateInput = document.getElementById("date");
@@ -1322,6 +1341,11 @@
     }
   }
 
+  function pinLabel(weight) {
+    const info = (PIN_INFO[exerciseSelect.value] || {})[weight];
+    return info ? ` (Pin ${info.pin}, ${info.color})` : "";
+  }
+
   function renderPlates(step, isLastPhase, isStack) {
     const finishedHtml = isLastPhase
       ? '<span class="finished-label">Finished for this week</span>'
@@ -1339,7 +1363,7 @@
           <rect x="24" y="16" width="18" height="5" rx="2.5" transform="rotate(-18 24 16)" fill="#ffcf7a" stroke="#e8a33d" stroke-width="1"/>
           <circle cx="24" cy="16" r="2" fill="#e8a33d"/>
         </svg>
-        <span class="bar-only">Set pin to ${step.weight} lbs</span>` + finishedHtml;
+        <span class="bar-only">Set pin to ${step.weight} lbs${pinLabel(step.weight)}</span>` + finishedHtml;
       return;
     }
     if (!step.plates.length) {
