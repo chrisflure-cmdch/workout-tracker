@@ -438,6 +438,7 @@
       <option value="Hoist ROC-IT - Leg Extension">Hoist ROC-IT - Leg Extension</option>
       <option value="Body Masters - Standing Calf Raise">Body Masters - Standing Calf Raise</option>
       <option value="Eagle by Cybex - Leg Press">Eagle by Cybex - Leg Press</option>
+      <option value="Hoist ROC-IT - Biceps Curl">Hoist ROC-IT - Biceps Curl</option>
       <option value="__custom__">+ Custom (build as you go)</option>
     </select>
   </label>
@@ -1138,6 +1139,49 @@
         { phase: "Max Attempt", weight: 120, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
       ],
     },
+    // Hoist ROC-IT - Biceps Curl (RS-1102) added 2026-09-14, built directly
+    // off Chris's real logged session (Notes correlated against the actual
+    // machine decal chart, no guessing needed this time -- every value
+    // matched exactly). Pin 3/4/5/6 red = 45/54/62/70, Pin 7/8 white =
+    // 77/85, real ascending-within-week working pattern like the recent Leg
+    // machines. Single grip, confirmed by Chris. Week 4 top rungs (88, 93)
+    // are projected off the real chart (Pin 9/10), not yet confirmed.
+    "Hoist ROC-IT - Biceps Curl": {
+      "Week 1 - Foundation": [
+        { phase: "Warm-Up Set 1", weight: 45, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 54, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 62, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 77, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 85, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 85, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 4", weight: 85, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 2 - Neurological Peak": [
+        { phase: "Warm-Up Set 1", weight: 45, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 54, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 62, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 77, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 85, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 85, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 3 - De-load": [
+        { phase: "Warm-Up Set 1", weight: 45, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 54, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Working Set 1", weight: 62, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 2", weight: 62, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 3", weight: 62, reps: "3 reps (Slow)", rest: "—", plates: [] },
+      ],
+      "Week 4 - Max Effort Test": [
+        { phase: "Warm-Up Set 1", weight: 45, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 54, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 62, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Warm-Up Set 5", weight: 88, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Max Attempt", weight: 93, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      ],
+    },
   };
 
   // Pin-loaded stack machines have no plates to show -- render the weight as a
@@ -1153,6 +1197,7 @@
     "Hoist ROC-IT - Leg Extension",
     "Body Masters - Standing Calf Raise",
     "Eagle by Cybex - Leg Press",
+    "Hoist ROC-IT - Biceps Curl",
   ]);
 
   // The Exercise dropdown's full option list (source of truth for
@@ -1172,6 +1217,7 @@
     "Hoist ROC-IT - Leg Extension",
     "Body Masters - Standing Calf Raise",
     "Eagle by Cybex - Leg Press",
+    "Hoist ROC-IT - Biceps Curl",
   ];
 
   // Category / Workout Day added 2026-09-13. Assigned by muscle group worked
@@ -1190,6 +1236,7 @@
     "Hoist ROC-IT - Leg Extension": "Legs",
     "Body Masters - Standing Calf Raise": "Legs",
     "Eagle by Cybex - Leg Press": "Legs",
+    "Hoist ROC-IT - Biceps Curl": "Shoulders/Bi's & Tri's",
   };
 
   // Real pin number + color, confirmed from Chris's own logged notes against
@@ -1225,6 +1272,16 @@
       100: { pin: 10 },
       110: { pin: 11 },
       120: { pin: 12 },
+    },
+    "Hoist ROC-IT - Biceps Curl": {
+      45: { pin: 3, color: "red" },
+      54: { pin: 4, color: "red" },
+      62: { pin: 5, color: "red" },
+      70: { pin: 6, color: "red" },
+      77: { pin: 7, color: "white" },
+      85: { pin: 8, color: "white" },
+      88: { pin: 9, color: "white" },
+      93: { pin: 10, color: "white" },
     },
   };
 
