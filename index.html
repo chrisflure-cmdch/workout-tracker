@@ -439,6 +439,7 @@
       <option value="Body Masters - Standing Calf Raise">Body Masters - Standing Calf Raise</option>
       <option value="Eagle by Cybex - Leg Press">Eagle by Cybex - Leg Press</option>
       <option value="Hoist ROC-IT - Biceps Curl">Hoist ROC-IT - Biceps Curl</option>
+      <option value="Body Masters - CM 226 - Tricep Press">Body Masters - CM 226 - Tricep Press</option>
       <option value="__custom__">+ Custom (build as you go)</option>
     </select>
   </label>
@@ -1182,6 +1183,49 @@
         { phase: "Max Attempt", weight: 93, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
       ],
     },
+    // Body Masters - CM 226 - Tricep Press added 2026-09-14, built directly
+    // off Chris's real logged session -- this stack prints actual lbs
+    // directly on each plate (20/30/40/.../140, no color coding, no x10
+    // math needed like the Hoist machines), and every logged value already
+    // landed on a real notch. Single grip (fixed cable bar, 5 lb max per
+    // the decal, negligible). Week 4 top rungs (80, 90) are projected off
+    // the visible stack notches, not yet confirmed.
+    "Body Masters - CM 226 - Tricep Press": {
+      "Week 1 - Foundation": [
+        { phase: "Warm-Up Set 1", weight: 30, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 50, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 60, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 70, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 70, reps: "2 reps", rest: "3-5 min", plates: [] },
+        { phase: "Working Set 4", weight: 70, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 2 - Neurological Peak": [
+        { phase: "Warm-Up Set 1", weight: 30, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 50, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Working Set 1", weight: 60, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 2", weight: 70, reps: "2 reps", rest: "4-5 min", plates: [] },
+        { phase: "Working Set 3", weight: 70, reps: "2 reps", rest: "—", plates: [] },
+      ],
+      "Week 3 - De-load": [
+        { phase: "Warm-Up Set 1", weight: 30, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Working Set 1", weight: 50, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 2", weight: 50, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
+        { phase: "Working Set 3", weight: 50, reps: "3 reps (Slow)", rest: "—", plates: [] },
+      ],
+      "Week 4 - Max Effort Test": [
+        { phase: "Warm-Up Set 1", weight: 30, reps: "10 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 2", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
+        { phase: "Warm-Up Set 3", weight: 50, reps: "3 reps", rest: "90 sec", plates: [] },
+        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
+        { phase: "Warm-Up Set 5", weight: 80, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Max Attempt", weight: 90, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      ],
+    },
   };
 
   // Pin-loaded stack machines have no plates to show -- render the weight as a
@@ -1198,6 +1242,7 @@
     "Body Masters - Standing Calf Raise",
     "Eagle by Cybex - Leg Press",
     "Hoist ROC-IT - Biceps Curl",
+    "Body Masters - CM 226 - Tricep Press",
   ]);
 
   // The Exercise dropdown's full option list (source of truth for
@@ -1218,6 +1263,7 @@
     "Body Masters - Standing Calf Raise",
     "Eagle by Cybex - Leg Press",
     "Hoist ROC-IT - Biceps Curl",
+    "Body Masters - CM 226 - Tricep Press",
   ];
 
   // Category / Workout Day added 2026-09-13. Assigned by muscle group worked
@@ -1237,6 +1283,7 @@
     "Body Masters - Standing Calf Raise": "Legs",
     "Eagle by Cybex - Leg Press": "Legs",
     "Hoist ROC-IT - Biceps Curl": "Shoulders/Bi's & Tri's",
+    "Body Masters - CM 226 - Tricep Press": "Shoulders/Bi's & Tri's",
   };
 
   // Real pin number + color, confirmed from Chris's own logged notes against
