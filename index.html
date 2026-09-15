@@ -441,6 +441,7 @@
       <option value="Hoist ROC-IT - Biceps Curl">Hoist ROC-IT - Biceps Curl</option>
       <option value="Body Masters - CM 226 - Tricep Press">Body Masters - CM 226 - Tricep Press</option>
       <option value="Icarian -Tricep Ext. 208">Icarian -Tricep Ext. 208</option>
+      <option value="Preacher Curls - Olympic EZ bar">Preacher Curls - Olympic EZ bar</option>
       <option value="__custom__">+ Custom (build as you go)</option>
     </select>
   </label>
@@ -1270,6 +1271,50 @@
         { phase: "Max Attempt", weight: 100, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
       ],
     },
+    // Preacher Curls - Olympic EZ bar added 2026-09-14. Plate-loaded, bar
+    // confirmed 25 lbs by Chris directly. His notes described plates loaded
+    // on both sides, so real totals are bar + 2x(plates/side) -- corrected
+    // the historical Notion rows too, since they'd been logged with the
+    // un-doubled total (e.g. "35" logged as "30"). Real session only
+    // explored 3 distinct loadings (35/45/55), holding 55 flat through all
+    // working sets -- warm-ups compressed to match (WU1/2 both 35). Week 4
+    // top rungs (65, 75) are projected, unconfirmed.
+    "Preacher Curls - Olympic EZ bar": {
+      "Week 1 - Foundation": [
+        { phase: "Warm-Up Set 1", weight: 35, reps: "10 reps", rest: "60 sec", plates: [5] },
+        { phase: "Warm-Up Set 2", weight: 35, reps: "5 reps", rest: "60 sec", plates: [5] },
+        { phase: "Warm-Up Set 3", weight: 45, reps: "3 reps", rest: "90 sec", plates: [10] },
+        { phase: "Warm-Up Set 4", weight: 55, reps: "1 rep", rest: "2 min", plates: [10, 5] },
+        { phase: "Working Set 1", weight: 55, reps: "2 reps", rest: "3-5 min", plates: [10, 5] },
+        { phase: "Working Set 2", weight: 55, reps: "2 reps", rest: "3-5 min", plates: [10, 5] },
+        { phase: "Working Set 3", weight: 55, reps: "2 reps", rest: "3-5 min", plates: [10, 5] },
+        { phase: "Working Set 4", weight: 55, reps: "2 reps", rest: "—", plates: [10, 5] },
+      ],
+      "Week 2 - Neurological Peak": [
+        { phase: "Warm-Up Set 1", weight: 35, reps: "10 reps", rest: "60 sec", plates: [5] },
+        { phase: "Warm-Up Set 2", weight: 35, reps: "5 reps", rest: "60 sec", plates: [5] },
+        { phase: "Warm-Up Set 3", weight: 45, reps: "3 reps", rest: "90 sec", plates: [10] },
+        { phase: "Warm-Up Set 4", weight: 55, reps: "1 rep", rest: "2 min", plates: [10, 5] },
+        { phase: "Working Set 1", weight: 55, reps: "2 reps", rest: "4-5 min", plates: [10, 5] },
+        { phase: "Working Set 2", weight: 55, reps: "2 reps", rest: "4-5 min", plates: [10, 5] },
+        { phase: "Working Set 3", weight: 55, reps: "2 reps", rest: "—", plates: [10, 5] },
+      ],
+      "Week 3 - De-load": [
+        { phase: "Warm-Up Set 1", weight: 35, reps: "10 reps", rest: "60 sec", plates: [5] },
+        { phase: "Warm-Up Set 2", weight: 35, reps: "5 reps", rest: "60 sec", plates: [5] },
+        { phase: "Working Set 1", weight: 45, reps: "3 reps (Slow)", rest: "2 min", plates: [10] },
+        { phase: "Working Set 2", weight: 45, reps: "3 reps (Slow)", rest: "2 min", plates: [10] },
+        { phase: "Working Set 3", weight: 45, reps: "3 reps (Slow)", rest: "—", plates: [10] },
+      ],
+      "Week 4 - Max Effort Test": [
+        { phase: "Warm-Up Set 1", weight: 35, reps: "10 reps", rest: "60 sec", plates: [5] },
+        { phase: "Warm-Up Set 2", weight: 35, reps: "5 reps", rest: "60 sec", plates: [5] },
+        { phase: "Warm-Up Set 3", weight: 45, reps: "3 reps", rest: "90 sec", plates: [10] },
+        { phase: "Warm-Up Set 4", weight: 55, reps: "1 rep", rest: "2 min", plates: [10, 5] },
+        { phase: "Warm-Up Set 5", weight: 65, reps: "1 rep", rest: "3 min", plates: [10, 10] },
+        { phase: "Max Attempt", weight: 75, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [25] },
+      ],
+    },
   };
 
   // Pin-loaded stack machines have no plates to show -- render the weight as a
@@ -1310,6 +1355,7 @@
     "Hoist ROC-IT - Biceps Curl",
     "Body Masters - CM 226 - Tricep Press",
     "Icarian -Tricep Ext. 208",
+    "Preacher Curls - Olympic EZ bar",
   ];
 
   // Category / Workout Day added 2026-09-13. Assigned by muscle group worked
@@ -1331,6 +1377,7 @@
     "Hoist ROC-IT - Biceps Curl": "Shoulders/Bi's & Tri's",
     "Body Masters - CM 226 - Tricep Press": "Shoulders/Bi's & Tri's",
     "Icarian -Tricep Ext. 208": "Shoulders/Bi's & Tri's",
+    "Preacher Curls - Olympic EZ bar": "Shoulders/Bi's & Tri's",
   };
 
   // Real pin number + color, confirmed from Chris's own logged notes against
