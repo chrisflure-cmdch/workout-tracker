@@ -167,38 +167,46 @@ async function handleRange(request, env, headers) {
     return json({ error: "Missing start/end query params" }, 400, headers);
   }
 
-  const notionRes = await fetch(
-    `https://api.notion.com/v1/databases/${env.NOTION_DATABASE_ID}/query`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.NOTION_TOKEN}`,
-        "Notion-Version": NOTION_VERSION,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        filter: {
-          and: [
-            { property: "Date", date: { on_or_after: start } },
-            { property: "Date", date: { on_or_before: end } },
-          ],
+  const rows = [];
+  let cursor = undefined;
+  for (let page = 0; page < 5; page++) {
+    const notionRes = await fetch(
+      `https://api.notion.com/v1/databases/${env.NOTION_DATABASE_ID}/query`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.NOTION_TOKEN}`,
+          "Notion-Version": NOTION_VERSION,
+          "Content-Type": "application/json",
         },
-        sorts: [
-          { property: "Date", direction: "ascending" },
-          { timestamp: "created_time", direction: "ascending" },
-        ],
-        page_size: 100,
-      }),
-    }
-  );
+        body: JSON.stringify({
+          filter: {
+            and: [
+              { property: "Date", date: { on_or_after: start } },
+              { property: "Date", date: { on_or_before: end } },
+            ],
+          },
+          sorts: [
+            { property: "Date", direction: "ascending" },
+            { timestamp: "created_time", direction: "ascending" },
+          ],
+          page_size: 100,
+          ...(cursor ? { start_cursor: cursor } : {}),
+        }),
+      }
+    );
 
-  if (!notionRes.ok) {
-    const detail = await notionRes.text();
-    return json({ error: "Notion query failed", detail }, 502, headers);
+    if (!notionRes.ok) {
+      const detail = await notionRes.text();
+      return json({ error: "Notion query failed", detail }, 502, headers);
+    }
+
+    const data = await notionRes.json();
+    rows.push(...(data.results || []).map(rowFromPage));
+    if (!data.has_more) break;
+    cursor = data.next_cursor;
   }
 
-  const data = await notionRes.json();
-  const rows = (data.results || []).map(rowFromPage);
   return json({ rows }, 200, headers);
 }
 
