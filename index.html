@@ -420,6 +420,7 @@
       <option value="Chest and Back">Chest and Back</option>
       <option value="Shoulders/Bi's &amp; Tri's">Shoulders/Bi's &amp; Tri's</option>
       <option value="Legs">Legs</option>
+      <option value="Core Work">Core Work</option>
     </select>
   </label>
 
@@ -446,6 +447,10 @@
     </select>
   </label>
 
+  <div id="exercise-reference" hidden>
+    <a id="exercise-reference-link" href="#" target="_blank" rel="noopener noreferrer">Exercise Video &#8599;</a>
+  </div>
+
   <div id="standard-fields">
     <label>Week
       <select id="week" required></select>
@@ -467,10 +472,10 @@
     <label id="custom-exercise-label">Exercise Name
       <input type="text" id="custom-exercise" placeholder="e.g. Flat Bench Press">
     </label>
-    <label>Week / Block <span style="color: var(--text-dim); font-weight: 400;">(optional)</span>
+    <label id="custom-week-label">Week / Block <span style="color: var(--text-dim); font-weight: 400;">(optional)</span>
       <input type="text" id="custom-week" placeholder="e.g. Week 1 - Foundation">
     </label>
-    <div class="row">
+    <div class="row" id="custom-phase-row">
       <label>Phase / Set Label
         <input type="text" id="custom-phase" placeholder="e.g. Working Set 1">
       </label>
@@ -478,7 +483,7 @@
         <input type="number" id="custom-set-number" inputmode="numeric" min="1" step="1" value="1">
       </label>
     </div>
-    <div class="row">
+    <div class="row" id="custom-target-row">
       <label>Target Weight <span style="color: var(--text-dim); font-weight: 400;">(optional)</span>
         <input type="number" id="custom-target-weight" inputmode="decimal" step="0.5">
       </label>
@@ -1366,6 +1371,13 @@
     "Body Masters - CM 226 - Tricep Press",
     "Icarian -Tricep Ext. 208",
     "Preacher Curls - Olympic EZ bar",
+    "Dumbbell Ab Flutter Kick",
+    "Dumbbell High Ab Crunch",
+    "Dumbbell Ab Bicycles",
+    "Russian Twists",
+    "Knee Tucks",
+    "Dumbbell Farmer's Carry",
+    "Weighted Dead Bug",
   ];
 
   // Category / Workout Day added 2026-09-13. Assigned by muscle group worked
@@ -1388,6 +1400,26 @@
     "Body Masters - CM 226 - Tricep Press": "Shoulders/Bi's & Tri's",
     "Icarian -Tricep Ext. 208": "Shoulders/Bi's & Tri's",
     "Preacher Curls - Olympic EZ bar": "Shoulders/Bi's & Tri's",
+    "Dumbbell Ab Flutter Kick": "Core Work",
+    "Dumbbell High Ab Crunch": "Core Work",
+    "Dumbbell Ab Bicycles": "Core Work",
+    "Russian Twists": "Core Work",
+    "Knee Tucks": "Core Work",
+    "Dumbbell Farmer's Carry": "Core Work",
+    "Weighted Dead Bug": "Core Work",
+  };
+
+  // Optional reference video (e.g. exact YouTube timestamp) for exercises
+  // that benefit from a form reminder -- shown as a link under the Exercise
+  // dropdown, hidden for anything not listed here.
+  const EXERCISE_REFERENCE_LINKS = {
+    "Dumbbell Ab Flutter Kick": "https://www.youtube.com/watch?v=3SUtOSaOn1M&t=178s",
+    "Dumbbell High Ab Crunch": "https://www.youtube.com/watch?v=3SUtOSaOn1M&t=50s",
+    "Dumbbell Ab Bicycles": "https://www.youtube.com/watch?v=3SUtOSaOn1M&t=299s",
+    "Russian Twists": "https://www.youtube.com/watch?v=3SUtOSaOn1M&t=418s",
+    "Knee Tucks": "https://www.youtube.com/watch?v=3SUtOSaOn1M&t=598s",
+    "Dumbbell Farmer's Carry": "https://www.youtube.com/watch?v=K4R8uc1x_OA",
+    "Weighted Dead Bug": "https://www.youtube.com/watch?v=oSExv5Iiu80",
   };
 
   // Real pin number + color, confirmed from Chris's own logged notes against
@@ -1439,6 +1471,8 @@
   const dateInput = document.getElementById("date");
   const categorySelect = document.getElementById("category");
   const exerciseSelect = document.getElementById("exercise");
+  const exerciseReference = document.getElementById("exercise-reference");
+  const exerciseReferenceLink = document.getElementById("exercise-reference-link");
   const standardFields = document.getElementById("standard-fields");
   const customFields = document.getElementById("custom-fields");
   const customExercise = document.getElementById("custom-exercise");
@@ -1448,6 +1482,9 @@
   const customTargetWeight = document.getElementById("custom-target-weight");
   const customTargetReps = document.getElementById("custom-target-reps");
   const customRest = document.getElementById("custom-rest");
+  const customWeekLabel = document.getElementById("custom-week-label");
+  const customPhaseRow = document.getElementById("custom-phase-row");
+  const customTargetRow = document.getElementById("custom-target-row");
   const weekSelect = document.getElementById("week");
   const phaseSelect = document.getElementById("phase");
   const pWeight = document.getElementById("p-weight");
@@ -1699,22 +1736,43 @@
   function isTypedCustomMode() {
     return exerciseSelect.value === "__custom__";
   }
+  function isCoreWorkMode() {
+    return EXERCISE_CATEGORIES[exerciseSelect.value] === "Core Work";
+  }
+  // Core Work has no week/phase progression -- Set # still increments under
+  // the hood (same as any custom exercise) so Notion rows stay distinguishable,
+  // it's just never shown or typed by hand.
+  function syncCorePhaseLabel() {
+    if (isCoreWorkMode()) customPhase.value = `Set ${customSetNumber.value || 1}`;
+  }
 
   function toggleExerciseMode() {
     const freeEntry = isFreeEntryMode();
     const typedCustom = isTypedCustomMode();
+    const isCoreWork = isCoreWorkMode();
     standardFields.hidden = freeEntry;
     customFields.hidden = !freeEntry;
     document.getElementById("custom-exercise-label").hidden = !typedCustom;
 
+    const referenceUrl = EXERCISE_REFERENCE_LINKS[exerciseSelect.value];
+    exerciseReference.hidden = !referenceUrl;
+    if (referenceUrl) exerciseReferenceLink.href = referenceUrl;
+
+    customWeekLabel.hidden = isCoreWork;
+    customPhaseRow.hidden = isCoreWork;
+    customTargetRow.hidden = isCoreWork;
+
     weekSelect.required = !freeEntry;
     phaseSelect.required = !freeEntry;
     customExercise.required = typedCustom;
-    customPhase.required = freeEntry;
+    customPhase.required = freeEntry && !isCoreWork;
 
     stopRestTimer();
     if (freeEntry) {
-      actualWeightInput.value = "";
+      // Core Work is almost always a held dumbbell -- default to 25 lb,
+      // still editable per set if a different weight is used.
+      actualWeightInput.value = isCoreWork ? "25" : "";
+      syncCorePhaseLabel();
     } else {
       populateWeeks();
       populatePhases();
@@ -2370,6 +2428,7 @@
 
       if (custom) {
         customSetNumber.value = Number(customSetNumber.value || 1) + 1;
+        syncCorePhaseLabel();
       } else {
         advancePhase();
         refreshWeekLocks();
