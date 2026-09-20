@@ -640,8 +640,11 @@
         { phase: "Warm-Up Set 2", weight: 172, reps: "5 reps", rest: "60 sec", plates: [45, 10] },
         { phase: "Warm-Up Set 3", weight: 192, reps: "3 reps", rest: "90 sec", plates: [45, 10, 10] },
         { phase: "Warm-Up Set 4", weight: 202, reps: "1 rep", rest: "2 min", plates: [45, 25] },
-        { phase: "Warm-Up Set 5", weight: 252, reps: "1 rep", rest: "3 min", plates: [45, 45, 5] },
-        { phase: "Max Attempt", weight: 262, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [45, 45, 10] },
+        // 2026-09-19: Week 2 showed 262 x 3/3/5 (target 2), est. 1RM ~295-306,
+        // so the old 262 max was already beaten. Warm-Up 5 is now the proven
+        // 262; Max Attempt steps to 282 (62 lb sled + 2 x 110 lb/side).
+        { phase: "Warm-Up Set 5", weight: 262, reps: "1 rep", rest: "3 min", plates: [45, 45, 10] },
+        { phase: "Max Attempt", weight: 282, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [45, 45, 10, 10] },
       ],
     },
     // Body Masters 310 Chest Press - Vertical added 2026-09-08 for the pin-loaded
@@ -1012,8 +1015,10 @@
         { phase: "Warm-Up Set 2", weight: 79, reps: "5 reps", rest: "60 sec", plates: [] },
         { phase: "Warm-Up Set 3", weight: 115, reps: "3 reps", rest: "90 sec", plates: [] },
         { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 183, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 199, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+        // 2026-09-19: proven ceiling is 167 x 2 (Pin 9); Week 4 now tops out
+        // one pin above it (183 = Pin 10) instead of a 32 lb reach to 199.
+        { phase: "Warm-Up Set 5", weight: 167, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Max Attempt", weight: 183, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
       ],
     },
     // Hoist ROC-IT - Leg Extension (RS-1401) added 2026-09-13, re-anchored
@@ -1054,12 +1059,15 @@
         { phase: "Warm-Up Set 2", weight: 66, reps: "5 reps", rest: "60 sec", plates: [] },
         { phase: "Warm-Up Set 3", weight: 78, reps: "3 reps", rest: "90 sec", plates: [] },
         { phase: "Warm-Up Set 4", weight: 91, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 126, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 138, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+        // 2026-09-19: proven ceiling is 115 x 3 (Pin 8); Week 4 now tops out
+        // one pin above it (126 = Pin 9) instead of 138 (Pin 10).
+        { phase: "Warm-Up Set 5", weight: 115, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Max Attempt", weight: 126, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
       ],
     },
     // Body Masters - Standing Calf Raise added 2026-09-13. Pin-loaded stack
-    // (base 90 lbs, 200 lb max) -- no nameplate/model visible in the photo,
+    // (base 90 lbs; the stack actually goes to 500 lb per Chris, 2026-09-19,
+    // the old "200 lb max" here was a guess) -- no nameplate/model visible in the photo,
     // brand and exercise per Chris directly. Single grip -- shoulder pads
     // for support, not a hand-grip choice.
     "Body Masters - Standing Calf Raise": {
@@ -1094,8 +1102,11 @@
         { phase: "Warm-Up Set 2", weight: 180, reps: "5 reps", rest: "60 sec", plates: [] },
         { phase: "Warm-Up Set 3", weight: 220, reps: "3 reps", rest: "90 sec", plates: [] },
         { phase: "Warm-Up Set 4", weight: 240, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 270, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 300, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+        // 2026-09-19: stack goes to 500 lb (per Chris), so 300 is no longer the
+        // ceiling. Proven 300 x 5 (9/13) and 280 x 5/3 (9/19); Warm-Up 5 is now
+        // the proven 300 and Max Attempt steps to 340.
+        { phase: "Warm-Up Set 5", weight: 300, reps: "1 rep", rest: "3 min", plates: [] },
+        { phase: "Max Attempt", weight: 340, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
       ],
     },
     // Eagle by Cybex - Leg Press added 2026-09-13 (tag E12), re-anchored
