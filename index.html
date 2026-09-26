@@ -388,6 +388,7 @@
   .legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-dim); }
   .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
   #custom-fields { display: flex; flex-direction: column; gap: 14px; }
+  .progress-mode { max-width: 480px; margin: 0 auto 12px; }
   #freestyle-block { display: flex; flex-direction: column; gap: 10px; }
   .freestyle-hint { color: var(--text-dim); font-size: 13px; }
   #load-type-block { display: flex; flex-direction: column; gap: 14px; }
@@ -646,6 +647,13 @@
       <label>Set #
         <input type="number" id="freestyle-set-number" inputmode="numeric" min="1" step="1" value="1">
       </label>
+      <div id="freestyle-grip-block" hidden>
+        <div class="freestyle-hint">Hand position (this machine has two grips)</div>
+        <div class="load-type-choices">
+          <label><input type="radio" name="freestyle-grip" value="Outer"> Outer grip</label>
+          <label><input type="radio" name="freestyle-grip" value="Inner"> Inner grip</label>
+        </div>
+      </div>
       <div class="freestyle-hint" id="freestyle-load-note" hidden></div>
       <div id="freestyle-plates-slot"></div>
       <div class="freestyle-hint">Freestyle: log any weight and reps you like. It stays out of the week plan and the progress charts.</div>
@@ -774,6 +782,13 @@
 </div>
 
 <div id="tab-progress" class="tab-panel" hidden>
+  <label class="progress-mode">Show
+    <select id="progress-mode">
+      <option value="progression">Progression (Weeks 1 to 4)</option>
+      <option value="freestyle">Freestyle</option>
+      <option value="week0">Week 0 (new machines)</option>
+    </select>
+  </label>
   <div class="range-nav">
     <button type="button" id="progress-prev">‹ Prev</button>
     <span id="progress-label"></span>
@@ -2022,6 +2037,24 @@
     return `Plate loaded, empty ${emptyWeightInput.value} lb, per side ${platesList().join("+")}. `;
   }
 
+  // Multi-grip machines (Overhead Press, Vertical Chest) have phases ending
+  // "(Outer)" / "(Inner)" in their plan. Freestyle follows the same model: pick
+  // the hand position and it is saved as the phase suffix ("Set 2 (Inner)"),
+  // which the Worker turns into the Grip column and the Progress tab into a
+  // separate line per grip.
+  const freestyleGripBlock = document.getElementById("freestyle-grip-block");
+  const freestyleGripRadios = Array.from(document.querySelectorAll('input[name="freestyle-grip"]'));
+  function isMultiGripExercise(name) {
+    return Object.values(EXERCISE_PLANS[name] || {}).some((steps) =>
+      steps.some((s) => /\((Outer|Inner)\)$/.test(s.phase))
+    );
+  }
+  function freestyleGripChoice() {
+    if (!isFreestyleMode() || !isMultiGripExercise(exerciseSelect.value)) return "";
+    const picked = freestyleGripRadios.find((r) => r.checked);
+    return picked ? picked.value : "";
+  }
+
   function syncFreestyleUI() {
     const freestyle = isFreestyleMode();
     phaseLabel.hidden = freestyle;
@@ -2029,6 +2062,9 @@
     pPlates.hidden = freestyle;
     freestyleBlock.hidden = !freestyle;
     phaseSelect.required = !freestyle && !isFreeEntryMode();
+    const multiGrip = freestyle && isMultiGripExercise(exerciseSelect.value);
+    freestyleGripBlock.hidden = !multiGrip;
+    freestyleGripRadios.forEach((r) => (r.required = multiGrip));
     syncFreestylePlates();
   }
 
@@ -2431,6 +2467,7 @@
       if (exerciseSelect.value !== lastFreestyleExercise) {
         lastFreestyleExercise = exerciseSelect.value;
         freestyleSetNumber.value = 1;
+        freestyleGripRadios.forEach((r) => (r.checked = false));
       }
       syncFreestyleUI();
       refreshWeekLocks();
@@ -2878,16 +2915,41 @@
       });
   }
 
-  function renderProgression(container, groups) {
+  // The Progress tab's "Show" dropdown. Progression is the coded Weeks 1 to 4
+  // (Working Set / Max Attempt phases only); Freestyle and Week 0 chart the top
+  // weight per day from rows saved under those Week values, so the three views
+  // never mix.
+  const PROGRESS_MODES = {
+    progression: {
+      title: "working weight",
+      empty: "Nothing logged in this range yet.",
+      pick: (r) => r.phase && (r.phase.startsWith("Working") || r.phase.startsWith("Max Attempt")),
+    },
+    freestyle: {
+      title: "freestyle top weight",
+      empty: "No freestyle sets logged in this range yet.",
+      pick: (r) => r.week === "Freestyle",
+    },
+    week0: {
+      title: "Week 0 top weight",
+      empty: "No Week 0 sets logged in this range yet.",
+      pick: (r) => r.week === "Week 0 - Initial Phase",
+    },
+  };
+  const progressModeSelect = document.getElementById("progress-mode");
+  let progressGroups = null;
+
+  function renderProgression(container, groups, mode = "progression") {
+    const cfg = PROGRESS_MODES[mode] || PROGRESS_MODES.progression;
     const byExercise = {};
     for (const g of groups) {
       for (const r of g.rows) {
-        if (!r.phase || !(r.phase.startsWith("Working") || r.phase.startsWith("Max Attempt"))) continue;
+        if (!cfg.pick(r)) continue;
         // Multi-grip exercises (phase ends "(Outer)"/"(Inner)") get tracked as
         // separate series under the same exercise -- otherwise a same-day
         // Math.max would let the stronger grip's weight silently swallow the
         // weaker grip's data.
-        const gripMatch = r.phase.match(/\((Outer|Inner)\)$/);
+        const gripMatch = (mode === "progression" || mode === "freestyle") && r.phase ? r.phase.match(/\((Outer|Inner)\)$/) : null;
         const ex = r.exercise || "Unknown";
         const grip = gripMatch ? gripMatch[1] : "_single";
         if (!byExercise[ex]) byExercise[ex] = {};
@@ -2899,7 +2961,7 @@
 
     const exercises = Object.keys(byExercise);
     if (!exercises.length) {
-      container.innerHTML = '<p class="empty-note">Nothing logged in this range yet.</p>';
+      container.innerHTML = `<p class="empty-note">${cfg.empty}</p>`;
       return;
     }
 
@@ -2909,7 +2971,7 @@
         const gripKeys = Object.keys(grips);
         if (gripKeys.length === 1 && gripKeys[0] === "_single") {
           const points = datePointsFrom(grips["_single"]);
-          return `<div class="progression-card"><h3>${ex} — working weight</h3>${buildLineChartSVG(points)}</div>`;
+          return `<div class="progression-card"><h3>${ex} — ${cfg.title}</h3>${buildLineChartSVG(points)}</div>`;
         }
         const series = gripKeys.map((k) => ({
           label: `${k} Grip`,
@@ -2919,7 +2981,7 @@
         const legend = `<div class="chart-legend">${series
           .map((s) => `<span class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span>${s.label}</span>`)
           .join("")}</div>`;
-        return `<div class="progression-card"><h3>${ex} — working weight</h3>${legend}${buildMultiLineChartSVG(series)}</div>`;
+        return `<div class="progression-card"><h3>${ex} — ${cfg.title}</h3>${legend}${buildMultiLineChartSVG(series)}</div>`;
       })
       .join("");
   }
@@ -2945,11 +3007,17 @@
     container.innerHTML = '<p class="empty-note">Loading…</p>';
     try {
       const groups = await fetchRangeGroups(start, end);
-      renderProgression(container, groups);
+      progressGroups = groups;
+      renderProgression(container, groups, progressModeSelect.value);
     } catch (e) {
       container.innerHTML = '<p class="empty-note">Couldn\'t load — check your connection.</p>';
     }
   }
+  // Switching the view re-draws from the data already loaded, no refetch.
+  progressModeSelect.addEventListener("change", () => {
+    const body = document.getElementById("progress-body");
+    if (progressGroups) renderProgression(body, progressGroups, progressModeSelect.value);
+  });
 
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabPanels = {
@@ -3065,11 +3133,12 @@
       restString = customRest.value.trim();
     } else if (freestyle) {
       const setNo = Number(freestyleSetNumber.value) || 1;
+      const grip = freestyleGripChoice();
       payload = {
         date: dateInput.value,
         exercise: exerciseSelect.value,
         week: FREESTYLE_WEEK,
-        phase: `Set ${setNo}`,
+        phase: grip ? `Set ${setNo} (${grip})` : `Set ${setNo}`,
         setNumber: setNo,
         targetWeight: null,
         targetReps: null,
