@@ -388,6 +388,8 @@
   .legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-dim); }
   .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
   #custom-fields { display: flex; flex-direction: column; gap: 14px; }
+  #freestyle-block { display: flex; flex-direction: column; gap: 10px; }
+  .freestyle-hint { color: var(--text-dim); font-size: 13px; }
   #load-type-block { display: flex; flex-direction: column; gap: 14px; }
   #load-type-block[hidden] { display: none; }
   #plates-label { display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: var(--text-dim); }
@@ -629,16 +631,25 @@
       <select id="week" required></select>
     </label>
 
-    <label>Phase
+    <label id="phase-label">Phase
       <select id="phase" required></select>
     </label>
 
-    <div class="prescribed">
+    <div class="prescribed" id="prescribed-block">
       <div class="item"><span class="label">Target Weight</span><span class="value" id="p-weight">—</span></div>
       <div class="item"><span class="label">Target Reps</span><span class="value" id="p-reps">—</span></div>
       <div class="item"><span class="label">Rest</span><span class="value" id="p-rest">—</span></div>
     </div>
     <div class="plates-row" id="p-plates"></div>
+
+    <div id="freestyle-block" hidden>
+      <label>Set #
+        <input type="number" id="freestyle-set-number" inputmode="numeric" min="1" step="1" value="1">
+      </label>
+      <div class="freestyle-hint" id="freestyle-load-note" hidden></div>
+      <div id="freestyle-plates-slot"></div>
+      <div class="freestyle-hint">Freestyle: log any weight and reps you like. It stays out of the week plan and the progress charts.</div>
+    </div>
   </div>
 
   <div id="custom-fields" hidden>
@@ -1948,9 +1959,82 @@
     return EXERCISE_PLANS[exerciseSelect.value];
   }
 
+  // "Freestyle" is an extra Week choice on every coded exercise. It drops the
+  // plan and logs a free set (weight, reps, notes) under the exercise's real
+  // name, phase "Set N". It never touches the week locks or the Progress charts,
+  // which only read Working Set / Max Attempt phases from the coded weeks.
+  const FREESTYLE_WEEK = "Freestyle";
+  const phaseLabel = document.getElementById("phase-label");
+  const prescribedBlock = document.getElementById("prescribed-block");
+  const freestyleBlock = document.getElementById("freestyle-block");
+  const freestyleSetNumber = document.getElementById("freestyle-set-number");
+  let lastFreestyleExercise = "";
+  function isFreestyleMode() {
+    return !isFreeEntryMode() && weekSelect.value === FREESTYLE_WEEK;
+  }
+
+  // Plate-loaded coded machines and what the empty bar or sled weighs (from the
+  // coded plans, confirmed by Chris). Freestyle on these shows the same
+  // tap-to-add plate picker as Week 0, adding 2 x one side to this weight.
+  const FREESTYLE_PLATE_MACHINES = {
+    "Incline Bench Press BM Smith Machine": { empty: 23, part: "bar" },
+    "Squat (Body Masters PS300)": { empty: 62, part: "sled" },
+    "BODY MASTERS LE 411 - 45° Super Seated Leg Press": { empty: 30, part: "sled" },
+    "Preacher Curls - Olympic EZ bar": { empty: 25, part: "bar" },
+  };
+  const freestyleLoadNote = document.getElementById("freestyle-load-note");
+  const freestylePlatesSlot = document.getElementById("freestyle-plates-slot");
+  let freestylePlatesOn = false;
+  function syncFreestylePlates() {
+    const ex = exerciseSelect.value;
+    const machine = FREESTYLE_PLATE_MACHINES[ex];
+    const want = isFreestyleMode() && !!machine;
+    if (want) {
+      if (!freestylePlatesOn) {
+        // Borrow the Week 0 plate picker; it goes back to the custom form after.
+        freestylePlatesSlot.appendChild(platesLabel);
+        platesLabel.hidden = false;
+        platesInput.value = "";
+        freestylePlatesOn = true;
+      }
+      emptyWeightInput.value = machine.empty;
+      syncPlateTotal();
+    } else if (freestylePlatesOn) {
+      customTargetRow.after(platesLabel);
+      platesLabel.hidden = true;
+      emptyWeightInput.value = "";
+      platesInput.value = "";
+      syncPlateTotal();
+      freestylePlatesOn = false;
+    }
+    const freestyle = isFreestyleMode();
+    freestyleLoadNote.hidden = !freestyle;
+    if (freestyle) {
+      freestyleLoadNote.textContent = machine
+        ? `Plate loaded. The empty ${machine.part} weighs ${machine.empty} lb. Tap the plates on ONE side and the total fills in.`
+        : STACK_LOADED_EXERCISES.has(ex)
+          ? "Pin loaded. Type the weight you set on the stack."
+          : "";
+    }
+  }
+  function freestylePlatesNotePrefix() {
+    if (!freestylePlatesOn || !platesList().length) return "";
+    return `Plate loaded, empty ${emptyWeightInput.value} lb, per side ${platesList().join("+")}. `;
+  }
+
+  function syncFreestyleUI() {
+    const freestyle = isFreestyleMode();
+    phaseLabel.hidden = freestyle;
+    prescribedBlock.hidden = freestyle;
+    pPlates.hidden = freestyle;
+    freestyleBlock.hidden = !freestyle;
+    phaseSelect.required = !freestyle && !isFreeEntryMode();
+    syncFreestylePlates();
+  }
+
   function populateWeeks() {
     weekSelect.innerHTML = "";
-    for (const week of Object.keys(currentPlan())) {
+    for (const week of [...Object.keys(currentPlan()), FREESTYLE_WEEK]) {
       const opt = document.createElement("option");
       opt.value = week;
       opt.textContent = week;
@@ -1960,6 +2044,7 @@
 
   function populatePhases() {
     phaseSelect.innerHTML = "";
+    if (weekSelect.value === FREESTYLE_WEEK) return;
     for (const step of currentPlan()[weekSelect.value]) {
       const opt = document.createElement("option");
       opt.value = step.phase;
@@ -2004,6 +2089,7 @@
   }
 
   function syncPrescribed() {
+    if (weekSelect.value === FREESTYLE_WEEK) return;
     const plan = currentPlan()[weekSelect.value];
     const idx = plan.findIndex((s) => s.phase === phaseSelect.value);
     const step = idx >= 0 ? plan[idx] : plan[0];
@@ -2059,18 +2145,26 @@
     }
 
     if (selectedIsLocked) {
-      const nextOpen = Array.from(weekSelect.options).find((o) => !o.disabled);
+      const nextOpen = Array.from(weekSelect.options).find((o) => !o.disabled && o.value !== FREESTYLE_WEEK);
       if (nextOpen) {
         weekSelect.value = nextOpen.value;
         populatePhases();
         syncPrescribed();
+        syncFreestyleUI();
       }
     }
   }
 
   weekSelect.addEventListener("change", () => {
+    const enteringFreestyle = isFreestyleMode();
     populatePhases();
     syncPrescribed();
+    if (enteringFreestyle) {
+      // The plan's weight does not apply here; start blank for a free set.
+      actualWeightInput.value = "";
+      document.getElementById("reps").value = "";
+    }
+    syncFreestyleUI();
     stopRestTimer();
   });
   phaseSelect.addEventListener("change", () => {
@@ -2081,6 +2175,7 @@
   populateWeeks();
   populatePhases();
   syncPrescribed();
+  syncFreestyleUI();
   refreshWeekLocks();
 
   // Only exercises with a coded EXERCISE_PLANS entry (Incline Bench Press, Squat)
@@ -2333,6 +2428,11 @@
       populateWeeks();
       populatePhases();
       syncPrescribed();
+      if (exerciseSelect.value !== lastFreestyleExercise) {
+        lastFreestyleExercise = exerciseSelect.value;
+        freestyleSetNumber.value = 1;
+      }
+      syncFreestyleUI();
       refreshWeekLocks();
     }
   }
@@ -2945,6 +3045,7 @@
     statusEl.textContent = "Saving...";
 
     const custom = isFreeEntryMode();
+    const freestyle = isFreestyleMode();
     let payload;
     let restString;
 
@@ -2962,6 +3063,21 @@
         notes: loadTypeNotePrefix() + document.getElementById("notes").value,
       };
       restString = customRest.value.trim();
+    } else if (freestyle) {
+      const setNo = Number(freestyleSetNumber.value) || 1;
+      payload = {
+        date: dateInput.value,
+        exercise: exerciseSelect.value,
+        week: FREESTYLE_WEEK,
+        phase: `Set ${setNo}`,
+        setNumber: setNo,
+        targetWeight: null,
+        targetReps: null,
+        actualWeight: actualWeightInput.value,
+        reps: document.getElementById("reps").value,
+        notes: freestylePlatesNotePrefix() + document.getElementById("notes").value,
+      };
+      restString = "";
     } else {
       const plan = currentPlan()[weekSelect.value];
       const idx = plan.findIndex((s) => s.phase === phaseSelect.value);
@@ -3030,6 +3146,8 @@
         lastCustomName = payload.exercise;
         customSetNumber.value = Number(customSetNumber.value || 1) + 1;
         syncCustomPhase();
+      } else if (freestyle) {
+        freestyleSetNumber.value = Number(freestyleSetNumber.value || 1) + 1;
       } else {
         advancePhase();
         refreshWeekLocks();
