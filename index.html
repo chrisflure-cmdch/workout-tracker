@@ -388,6 +388,68 @@
   .legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-dim); }
   .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
   #custom-fields { display: flex; flex-direction: column; gap: 14px; }
+  #load-type-block { display: flex; flex-direction: column; gap: 14px; }
+  #load-type-block[hidden] { display: none; }
+  #plates-label { display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: var(--text-dim); }
+  #plates-label[hidden] { display: none; }
+  .plate-picker { display: flex; flex-direction: column; gap: 10px; }
+  .plate-row { display: flex; align-items: center; gap: 8px; }
+  .plate-tap {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .plate-tap:active { transform: scale(0.94); }
+  .plate-count {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--glow);
+    color: #241705;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .plate-count[hidden] { display: none; }
+  .plate-action {
+    margin: 0;
+    height: 44px;
+    padding: 0 18px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .load-type-choices { display: flex; gap: 10px; }
+  .load-type-choices label {
+    flex: 1;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 17px;
+    color: var(--text);
+  }
+  .load-type-choices input[type=radio] { width: auto; padding: 0; margin: 0; accent-color: var(--glow); }
 </style>
 </head>
 <body>
@@ -472,12 +534,28 @@
     <label id="custom-exercise-label">Exercise Name
       <input type="text" id="custom-exercise" placeholder="e.g. Flat Bench Press">
     </label>
-    <label id="custom-week-label">Week / Block <span style="color: var(--text-dim); font-weight: 400;">(optional)</span>
-      <input type="text" id="custom-week" placeholder="e.g. Week 1 - Foundation">
+    <div id="load-type-block" hidden>
+      <div class="load-type-choices">
+        <label><input type="radio" name="load-type" value="Plate loaded"> Plate loaded</label>
+        <label><input type="radio" name="load-type" value="Pin loaded"> Pin loaded</label>
+      </div>
+      <label id="empty-weight-label" hidden>Empty weight: sled, carriage or bar <span style="color: var(--text-dim); font-weight: 400;">(optional, lbs, leave blank if none)</span>
+        <input type="number" id="empty-weight" inputmode="decimal" step="0.5">
+      </label>
+    </div>
+    <label id="custom-week-label">Week / Block
+      <select id="custom-week">
+        <option value="">Pick a week</option>
+        <option value="Week 0 - Initial Phase">Week 0 - Initial Phase</option>
+        <option value="Week 1 - Foundation">Week 1 - Foundation</option>
+        <option value="Week 2 - Neurological Peak">Week 2 - Neurological Peak</option>
+        <option value="Week 3 - De-load">Week 3 - De-load</option>
+        <option value="Week 4 - Max Effort Test">Week 4 - Max Effort Test</option>
+      </select>
     </label>
     <div class="row" id="custom-phase-row">
       <label>Phase / Set Label
-        <input type="text" id="custom-phase" placeholder="e.g. Working Set 1">
+        <select id="custom-phase"></select>
       </label>
       <label>Set #
         <input type="number" id="custom-set-number" inputmode="numeric" min="1" step="1" value="1">
@@ -491,12 +569,18 @@
         <input type="text" id="custom-target-reps" placeholder="e.g. 2 reps">
       </label>
     </div>
-    <label>Rest <span style="color: var(--text-dim); font-weight: 400;">(optional, e.g. "90 sec" or "3 min")</span>
+    <div id="plates-label" hidden>
+      <div>Plates per side <span style="font-weight: 400;">(same on both sides, tap to add)</span></div>
+      <div class="plate-picker" id="plate-picker"></div>
+      <input type="text" id="plates-per-side" placeholder="or type it, e.g. 45+10" autocomplete="off">
+      <span id="plates-total"></span>
+    </div>
+    <label id="custom-rest-label">Rest <span style="color: var(--text-dim); font-weight: 400;">(optional, e.g. "90 sec" or "3 min")</span>
       <input type="text" id="custom-rest" placeholder="e.g. 2 min">
     </label>
   </div>
 
-  <div class="row">
+  <div class="row" id="actual-row">
     <label>Actual Weight (lbs)
       <input type="number" id="actualWeight" inputmode="decimal" step="0.5" required>
     </label>
@@ -1485,6 +1569,16 @@
   const customWeekLabel = document.getElementById("custom-week-label");
   const customPhaseRow = document.getElementById("custom-phase-row");
   const customTargetRow = document.getElementById("custom-target-row");
+  const customRestLabel = document.getElementById("custom-rest-label");
+  const loadTypeBlock = document.getElementById("load-type-block");
+  const loadTypeRadios = Array.from(document.querySelectorAll('input[name="load-type"]'));
+  const emptyWeightLabel = document.getElementById("empty-weight-label");
+  const emptyWeightInput = document.getElementById("empty-weight");
+  const platesLabel = document.getElementById("plates-label");
+  const platesInput = document.getElementById("plates-per-side");
+  const platesTotal = document.getElementById("plates-total");
+  const notesInput = document.getElementById("notes");
+  const actualRow = document.getElementById("actual-row");
   const weekSelect = document.getElementById("week");
   const phaseSelect = document.getElementById("phase");
   const pWeight = document.getElementById("p-weight");
@@ -1739,17 +1833,143 @@
   function isCoreWorkMode() {
     return EXERCISE_CATEGORIES[exerciseSelect.value] === "Core Work";
   }
-  // Core Work has no week/phase progression -- Set # still increments under
-  // the hood (same as any custom exercise) so Notion rows stay distinguishable,
-  // it's just never shown or typed by hand.
-  function syncCorePhaseLabel() {
-    if (isCoreWorkMode()) customPhase.value = `Set ${customSetNumber.value || 1}`;
+  // Core Work and Week 0 (calibration) have no warm-up/working split -- the
+  // phase is just "Set N", filled in from the Set # box. Every other custom
+  // week picks from Working Set 1-4, defaulting to Working Set 1.
+  const WEEK_ZERO_LABEL = "Week 0 - Initial Phase";
+  function syncCustomPhase() {
+    // Week 0 is just weight and reps, so drop the targets and put Rest
+    // (optional) under the actual weight/reps instead of above them.
+    const weekZero = !isCoreWorkMode() && customWeek.value === WEEK_ZERO_LABEL;
+    syncLoadType(weekZero && isTypedCustomMode());
+    customTargetRow.hidden = isCoreWorkMode() || weekZero;
+    if (weekZero) actualRow.after(customRestLabel);
+    else customTargetRow.after(customRestLabel);
+    const numbered = isCoreWorkMode() || weekZero;
+    const labels = numbered
+      ? [`Set ${customSetNumber.value || 1}`]
+      : ["Working Set 1", "Working Set 2", "Working Set 3", "Working Set 4"];
+    const keep = customPhase.value;
+    customPhase.innerHTML = "";
+    for (const label of labels) {
+      const opt = document.createElement("option");
+      opt.value = label;
+      opt.textContent = label;
+      customPhase.appendChild(opt);
+    }
+    customPhase.value = labels.includes(keep) ? keep : labels[0];
   }
+  // A brand-new machine logged in Week 0 records how it's loaded, and for a
+  // plate-loaded one the empty sled/carriage/bar weight, so the Add New
+  // Exercise workflow doesn't have to ask again. Both ride along in Notes.
+  function loadTypeChoice() {
+    const picked = loadTypeRadios.find((r) => r.checked);
+    return picked ? picked.value : "";
+  }
+  function syncLoadType(show) {
+    loadTypeBlock.hidden = !show;
+    loadTypeRadios.forEach((r) => (r.required = show));
+    emptyWeightLabel.hidden = !(show && loadTypeChoice() === "Plate loaded");
+    platesLabel.hidden = emptyWeightLabel.hidden;
+    notesInput.placeholder = show
+      ? "Other factors: seat position, pad setting, grip, anything about the machine (optional)"
+      : "optional";
+  }
+  // Plates are typed for ONE side ("45+10" or "45 10"); the same set goes on
+  // both sides, so the real weight is empty + 2 x that side.
+  function platesList() {
+    return platesInput.value.match(/\d+(?:\.\d+)?/g) || [];
+  }
+  const PLATE_CHOICES = [45, 35, 25, 10, 5, 2.5];
+  const platePicker = document.getElementById("plate-picker");
+  platePicker.innerHTML =
+    '<div class="plate-row">' +
+    PLATE_CHOICES.map(
+      (w) =>
+        `<button type="button" class="plate-tap" data-plate="${w}" aria-label="Add a ${w} lb plate">` +
+        `<span class="plate plate-${String(w).replace(".", "-")}">${w}</span><span class="plate-count" hidden></span></button>`
+    ).join("") +
+    '</div><div class="plate-row">' +
+    '<button type="button" class="plate-action" data-action="undo">Undo</button>' +
+    '<button type="button" class="plate-action" data-action="clear">Clear</button>' +
+    "</div>";
+  function setPlates(list) {
+    platesInput.value = list.join("+");
+    syncPlateTotal();
+    if (!list.length) actualWeightInput.value = "";
+  }
+  platePicker.addEventListener("click", (e) => {
+    const tap = e.target.closest(".plate-tap");
+    if (tap) return setPlates(platesList().concat(tap.dataset.plate));
+    const action = e.target.closest("[data-action]");
+    if (action) setPlates(action.dataset.action === "undo" ? platesList().slice(0, -1) : []);
+  });
+  function syncPlateTotal() {
+    const list = platesList().map(Number);
+    platePicker.querySelectorAll(".plate-tap").forEach((btn) => {
+      const n = list.filter((w) => w === Number(btn.dataset.plate)).length;
+      const badge = btn.querySelector(".plate-count");
+      badge.hidden = !n;
+      badge.textContent = n;
+    });
+    const side = list.reduce((sum, n) => sum + n, 0);
+    if (!side) {
+      platesTotal.textContent = "";
+      return;
+    }
+    const empty = Number(emptyWeightInput.value) || 0;
+    const total = Math.round((empty + side * 2) * 100) / 100;
+    platesTotal.textContent = `${empty ? `${empty} + ` : ""}2 x ${side} = ${total} lb`;
+    actualWeightInput.value = total;
+  }
+  platesInput.addEventListener("input", syncPlateTotal);
+  emptyWeightInput.addEventListener("input", syncPlateTotal);
+  function loadTypeNotePrefix() {
+    if (loadTypeBlock.hidden) return "";
+    const type = loadTypeChoice();
+    const isPlate = type === "Plate loaded";
+    const empty = isPlate && emptyWeightInput.value ? `, empty ${emptyWeightInput.value} lb` : "";
+    const plates = isPlate && platesList().length ? `, per side ${platesList().join("+")}` : "";
+    return `${type}${empty}${plates}. `;
+  }
+  // The pick carries across every set of the exercise just logged, but a
+  // different exercise starts clean so a pin machine can't inherit the last
+  // plate machine's answers.
+  // Set # always restarts at 1 when the name changes, even if nothing was
+  // logged under the old one. The plate/pin pick and any half-typed weight and
+  // reps only clear once there was a previous exercise to carry over from, so
+  // picking the radios before tabbing out of the name field doesn't wipe them.
+  let lastCustomName = "";
+  function resetLoadTypeForNewExercise() {
+    const current = isTypedCustomMode() ? customExercise.value.trim() : exerciseSelect.value;
+    if (current === lastCustomName) return;
+    const hadPrevious = lastCustomName !== "";
+    lastCustomName = current;
+    customSetNumber.value = 1;
+    if (!hadPrevious) return;
+    loadTypeRadios.forEach((r) => (r.checked = false));
+    emptyWeightInput.value = "";
+    platesInput.value = "";
+    syncPlateTotal();
+    // Coded exercises keep their own progression, so leave those fields alone.
+    if (isFreeEntryMode()) {
+      actualWeightInput.value = "";
+      document.getElementById("reps").value = "";
+    }
+  }
+  customExercise.addEventListener("change", () => {
+    resetLoadTypeForNewExercise();
+    syncCustomPhase();
+  });
+  loadTypeRadios.forEach((r) => r.addEventListener("change", syncCustomPhase));
+  customWeek.addEventListener("change", syncCustomPhase);
+  customSetNumber.addEventListener("input", syncCustomPhase);
 
   function toggleExerciseMode() {
     const freeEntry = isFreeEntryMode();
     const typedCustom = isTypedCustomMode();
     const isCoreWork = isCoreWorkMode();
+    resetLoadTypeForNewExercise();
     standardFields.hidden = freeEntry;
     customFields.hidden = !freeEntry;
     document.getElementById("custom-exercise-label").hidden = !typedCustom;
@@ -1761,18 +1981,22 @@
     customWeekLabel.hidden = isCoreWork;
     customPhaseRow.hidden = isCoreWork;
     customTargetRow.hidden = isCoreWork;
+    // Rest may have been moved under the actual row for Week 0; it lives in
+    // custom-fields, so put it back before the standard form takes over.
+    customTargetRow.after(customRestLabel);
 
     weekSelect.required = !freeEntry;
     phaseSelect.required = !freeEntry;
     customExercise.required = typedCustom;
     customPhase.required = freeEntry && !isCoreWork;
+    customWeek.required = freeEntry && !isCoreWork;
 
     stopRestTimer();
     if (freeEntry) {
       // Core Work is almost always a held dumbbell -- default to 25 lb,
       // still editable per set if a different weight is used.
       actualWeightInput.value = isCoreWork ? "25" : "";
-      syncCorePhaseLabel();
+      syncCustomPhase();
     } else {
       populateWeeks();
       populatePhases();
@@ -1799,12 +2023,32 @@
 
   let lastTodayRows = [];
 
+  // Notion can take a few seconds to return a row it just accepted, so a set
+  // that was saved a moment ago is held here and shown until /today catches up.
+  let pendingSaved = [];
+  const todayRowKey = (r) => `${r.exercise}|${r.phase}|${Number(r.actualWeight)}|${Number(r.reps)}`;
+
   async function loadToday() {
     try {
       const res = await fetch(`${WORKER_URL}/today?date=${encodeURIComponent(dateInput.value)}`);
       if (!res.ok) return;
       const data = await res.json();
-      lastTodayRows = data.rows || [];
+      const fetched = data.rows || [];
+      const seen = new Set();
+      const stillPending = [];
+      const notReturnedYet = [];
+      for (const p of pendingSaved) {
+        if (Date.now() - p.at > 60000) continue;
+        const idx = fetched.findIndex((r, i) => !seen.has(i) && todayRowKey(r) === todayRowKey(p.row));
+        if (idx >= 0) {
+          seen.add(idx);
+        } else {
+          stillPending.push(p);
+          if (p.row.date === dateInput.value) notReturnedYet.push(p.row);
+        }
+      }
+      pendingSaved = stillPending;
+      lastTodayRows = fetched.concat(notReturnedYet);
       todayBody.innerHTML = "";
       for (const row of lastTodayRows) {
         const tr = document.createElement("tr");
@@ -2383,7 +2627,7 @@
         targetReps: customTargetReps.value.trim() || null,
         actualWeight: actualWeightInput.value,
         reps: document.getElementById("reps").value,
-        notes: document.getElementById("notes").value,
+        notes: loadTypeNotePrefix() + document.getElementById("notes").value,
       };
       restString = customRest.value.trim();
     } else {
@@ -2427,13 +2671,16 @@
       }
 
       if (custom) {
+        lastCustomName = payload.exercise;
         customSetNumber.value = Number(customSetNumber.value || 1) + 1;
-        syncCorePhaseLabel();
+        syncCustomPhase();
       } else {
         advancePhase();
         refreshWeekLocks();
       }
+      pendingSaved.push({ at: Date.now(), row: { ...payload } });
       loadToday();
+      setTimeout(loadToday, 4000);
     } catch (err) {
       statusEl.className = "err";
       statusEl.textContent = err.message || "Something went wrong.";
