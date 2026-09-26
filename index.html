@@ -455,6 +455,37 @@
   }
   .machine-photo-btn[hidden] { display: none; }
   .machine-photo-btn img { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; }
+  /* Category body-map icons (2026-09-26): the worked muscles light up in the category's color. */
+  .cat-picker { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-dim); }
+  .cat-picker-all { color: var(--glow-bright); font-weight: 600; }
+  .cat-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .cat-chip {
+    margin: 0;
+    padding: 10px 4px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    cursor: pointer;
+  }
+  .cat-chip.active { border-color: currentColor; color: var(--cat-color); background: var(--cat-bg); }
+  .body-icon { flex-shrink: 0; }
+  .body-icon .m { fill: #66553f; }
+  .body-icon .m.hi { fill: var(--cat-color); }
+  .select-with-icon { position: relative; }
+  .select-with-icon .body-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .select-with-icon.has-icon select { padding-left: 42px; }
+  .date-group h3 { display: flex; align-items: center; gap: 8px; }
+  .date-group h3 .cat-icons { display: inline-flex; gap: 2px; }
   #photo-lightbox {
     position: fixed;
     inset: 0;
@@ -575,7 +606,12 @@
     <input type="date" id="date" required>
   </label>
 
-  <label>Category / Workout Day
+  <div class="cat-picker">
+    <span>Category / Workout Day: <span id="cat-picker-current" class="cat-picker-all">All Exercises</span></span>
+    <div id="cat-chips" class="cat-chips"></div>
+  </div>
+  <!-- The chips drive this hidden select, so the existing filter code is unchanged. -->
+  <label hidden>Category / Workout Day
     <select id="category">
       <option value="">All Exercises</option>
       <option value="Chest and Back">Chest and Back</option>
@@ -586,6 +622,7 @@
   </label>
 
   <label>Exercise
+    <div id="exercise-select-wrap" class="select-with-icon"><span id="exercise-cat-icon"></span>
     <select id="exercise" required>
       <option value="Incline Bench Press BM Smith Machine">Incline Bench Press BM Smith Machine</option>
       <option value="Squat (Body Masters PS300)">Squat (Body Masters PS300)</option>
@@ -606,6 +643,7 @@
       <option value="Preacher Curls - Olympic EZ bar">Preacher Curls - Olympic EZ bar</option>
       <option value="__custom__">+ Custom (build as you go)</option>
     </select>
+    </div>
   </label>
 
   <div id="exercise-reference" hidden>
@@ -2430,6 +2468,8 @@
     customFields.hidden = !freeEntry;
     document.getElementById("custom-exercise-label").hidden = !typedCustom;
 
+    updateExerciseCategoryIcon();
+
     const referenceUrl = EXERCISE_REFERENCE_LINKS[exerciseSelect.value];
     exerciseReference.hidden = !referenceUrl;
     if (referenceUrl) exerciseReferenceLink.href = referenceUrl;
@@ -2473,6 +2513,68 @@
       refreshWeekLocks();
     }
   }
+  // Category body-map icons (2026-09-26). Hand-drawn front-view figure
+  // (viewBox 0 0 40 64); the muscle groups each category works are lit in
+  // that category's color, everything else stays dim.
+  const BODY_PARTS = {
+    delts: '<ellipse cx="11" cy="15.6" rx="3.4" ry="2.7" transform="rotate(-25 11 15.6)"/><ellipse cx="29" cy="15.6" rx="3.4" ry="2.7" transform="rotate(25 29 15.6)"/>',
+    pecs: '<path d="M15 13.2h4.6v6.6c-2.4 1.4-5 .6-6-1.6c0-2.2.4-4 1.4-5z"/><path d="M25 13.2h-4.6v6.6c2.4 1.4 5 .6 6-1.6c0-2.2-.4-4-1.4-5z"/>',
+    lats: '<path d="M13 19.5c.9 1.6 2 2.3 2.9 2.4l-.3 8.5c-1.4-1.6-2.4-4.8-2.6-10.9z"/><path d="M27 19.5c-.9 1.6-2 2.3-2.9 2.4l.3 8.5c1.4-1.6 2.4-4.8 2.6-10.9z"/>',
+    abs: '<rect x="16.7" y="21.6" width="3" height="3.4" rx="1"/><rect x="20.3" y="21.6" width="3" height="3.4" rx="1"/>' +
+      '<rect x="16.7" y="25.5" width="3" height="3.4" rx="1"/><rect x="20.3" y="25.5" width="3" height="3.4" rx="1"/>' +
+      '<rect x="16.7" y="29.4" width="3" height="3.8" rx="1"/><rect x="20.3" y="29.4" width="3" height="3.8" rx="1"/>',
+    arms: '<path d="M7.6 18.6c1.4-.6 2.8-.2 3.4 1l-.6 9.6c-.5 1-2.3 1.1-3 .2c-.9-3.4-.8-7.3.2-10.8z"/><path d="M32.4 18.6c-1.4-.6-2.8-.2-3.4 1l.6 9.6c.5 1 2.3 1.1 3 .2c.9-3.4.8-7.3-.2-10.8z"/>' +
+      '<path d="M7.3 31.2c.9-.4 2.1-.3 2.8.4l-.9 9.2c-.4.7-1.6.8-2.1.1c-.6-3.2-.5-6.5.2-9.7z"/><path d="M32.7 31.2c-.9-.4-2.1-.3-2.8.4l.9 9.2c.4.7 1.6.8 2.1.1c.6-3.2.5-6.5-.2-9.7z"/>',
+    hips: '<path d="M15.8 34.6h8.4l1.6 4.4l-5.8 1.6l-5.8-1.6z"/>',
+    thighs: '<path d="M14 39.4l5.4 1.6l-.6 11.6c-.6.9-2.6.9-3.2 0c-1.6-4-2-8.6-1.6-13.2z"/><path d="M26 39.4l-5.4 1.6l.6 11.6c.6.9 2.6.9 3.2 0c1.6-4 2-8.6 1.6-13.2z"/>',
+    calves: '<path d="M15.2 54c1-.6 2.4-.6 3.2.2l-.4 8.2c-.4.6-1.6.6-2 0c-1-2.8-1.3-5.6-.8-8.4z"/><path d="M24.8 54c-1-.6-2.4-.6-3.2.2l.4 8.2c.4.6 1.6.6 2 0c1-2.8 1.3-5.6.8-8.4z"/>',
+  };
+  const CATEGORY_ICONS = {
+    "Chest and Back": { lit: ["pecs", "lats"], color: "#ffcf7a", bg: "rgba(255, 207, 122, 0.10)" },
+    "Shoulders/Bi's & Tri's": { lit: ["delts", "arms"], color: "#9dc3e8", bg: "rgba(157, 195, 232, 0.12)" },
+    "Legs": { lit: ["thighs", "calves"], color: "#9adf9e", bg: "rgba(154, 223, 158, 0.10)" },
+    "Core Work": { lit: ["abs"], color: "#c9c3f7", bg: "rgba(201, 195, 247, 0.12)" },
+  };
+  function bodyIconSVG(category, height) {
+    const cfg = CATEGORY_ICONS[category];
+    if (!cfg) return "";
+    const parts = Object.keys(BODY_PARTS)
+      .map((p) => `<g class="m${cfg.lit.includes(p) ? " hi" : ""}">${BODY_PARTS[p]}</g>`)
+      .join("");
+    return `<svg class="body-icon" viewBox="0 0 40 64" width="${(height * 40) / 64}" height="${height}" style="--cat-color:${cfg.color}" aria-label="${category}" role="img">` +
+      `<circle class="m" cx="20" cy="6.5" r="4.2"/><rect class="m" x="18.3" y="10" width="3.4" height="3" rx="1"/>${parts}</svg>`;
+  }
+
+  const catChips = document.getElementById("cat-chips");
+  const catPickerCurrent = document.getElementById("cat-picker-current");
+  function renderCategoryChips() {
+    const current = categorySelect.value;
+    catPickerCurrent.textContent = current || "All Exercises";
+    catChips.innerHTML = Object.keys(CATEGORY_ICONS)
+      .map((name) => {
+        const cfg = CATEGORY_ICONS[name];
+        const active = name === current;
+        return `<button type="button" class="cat-chip${active ? " active" : ""}" data-category="${name}" aria-pressed="${active}" ` +
+          `style="--cat-color:${cfg.color};--cat-bg:${cfg.bg}">${bodyIconSVG(name, 46)}${name}</button>`;
+      })
+      .join("");
+  }
+  // Tapping the active chip again clears the filter back to All Exercises.
+  catChips.addEventListener("click", (e) => {
+    const chip = e.target.closest(".cat-chip");
+    if (!chip) return;
+    categorySelect.value = chip.dataset.category === categorySelect.value ? "" : chip.dataset.category;
+    categorySelect.dispatchEvent(new Event("change"));
+  });
+
+  const exerciseSelectWrap = document.getElementById("exercise-select-wrap");
+  const exerciseCatIcon = document.getElementById("exercise-cat-icon");
+  function updateExerciseCategoryIcon() {
+    const icon = bodyIconSVG(EXERCISE_CATEGORIES[exerciseSelect.value], 30);
+    exerciseCatIcon.innerHTML = icon;
+    exerciseSelectWrap.classList.toggle("has-icon", !!icon);
+  }
+
   function populateExerciseOptions() {
     const cat = categorySelect.value;
     const prevValue = exerciseSelect.value;
@@ -2483,10 +2585,12 @@
     exerciseSelect.value = filtered.includes(prevValue) || prevValue === "__custom__" ? prevValue : filtered[0] || "__custom__";
   }
   categorySelect.addEventListener("change", () => {
+    renderCategoryChips();
     populateExerciseOptions();
     toggleExerciseMode();
   });
   exerciseSelect.addEventListener("change", toggleExerciseMode);
+  renderCategoryChips();
   populateExerciseOptions();
   toggleExerciseMode();
 
@@ -2674,7 +2778,10 @@
     const rows = g.rows
       .map((r) => `<tr><td>${r.exercise ?? ""}</td><td>${r.phase ?? ""}</td><td>${r.actualWeight ?? ""} lbs</td><td>${r.reps ?? ""}</td></tr>`)
       .join("");
-    return `<div class="date-group" data-date="${g.date}"><h3>${label}</h3><table><thead><tr><th>Exercise</th><th>Phase</th><th>Weight</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table>${reportButtonsHTML()}</div>`;
+    // One body icon per category trained that day, in first-logged order.
+    const dayCategories = [...new Set(g.rows.map((r) => EXERCISE_CATEGORIES[r.exercise]).filter(Boolean))];
+    const icons = dayCategories.map((c) => bodyIconSVG(c, 26)).join("");
+    return `<div class="date-group" data-date="${g.date}"><h3>${label}${icons ? `<span class="cat-icons">${icons}</span>` : ""}</h3><table><thead><tr><th>Exercise</th><th>Phase</th><th>Weight</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table>${reportButtonsHTML()}</div>`;
   }
 
   function wireDateGroupButtons(root, groups) {
