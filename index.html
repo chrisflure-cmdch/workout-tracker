@@ -1643,11 +1643,74 @@
 
   // Machine photos: up to 3 per exercise, the FIRST is the thumbnail chip under
   // the Exercise dropdown and tapping it opens all of them to swipe through.
+  // House rule (Chris, 2026-09-26): when a machine's instructions plate photo
+  // exists, it goes first so it is the default thumbnail.
   // Images live in the repo's machines folder, added when an exercise is set
   // up, so they never expire the way Notion file links do.
   const EXERCISE_PHOTOS = {
+    "Squat (Body Masters PS300)": [
+      { src: "machines/squat-ps300-2.jpg", caption: "Instructions plate: PS 300 Squat." },
+      { src: "machines/squat-ps300-1.jpg", caption: "Body Masters PS300 squat machine. Plates load on the bar ends." },
+    ],
+    "Body Masters 310 Chest Press - Vertical": [
+      { src: "machines/chest-press-310-1.jpg", caption: "Instructions plate: Body Masters 310 Chest Press - Vertical, tag B4." },
+    ],
+    "BODY MASTERS CM 240 - Lat Pull-down": [
+      { src: "machines/lat-pulldown-1.jpg", caption: "Instructions plate: Body Masters Circuit Master CM 240 Lat Pulldown." },
+      { src: "machines/lat-pulldown-2.jpg", caption: "The lat bar handle, a MAG (Maximum Advantage Grip) attachment." },
+    ],
+    "Precor - Vertical Row 309": [
+      { src: "machines/vertical-row-309-1.jpg", caption: "Instructions plate: Vertical Row 309 (the plate itself reads Icarian)." },
+    ],
+    "Nautilus Nitro - Vertical Chest": [
+      { src: "machines/vertical-chest-1.jpg", caption: "Instructions plate: Nautilus Nitro Vertical Chest." },
+    ],
+    "Nautilus Nitro - Overhead Press": [
+      { src: "machines/overhead-press-3.jpg", caption: "Instructions plate." },
+      { src: "machines/overhead-press-1.jpg", caption: "Nautilus Nitro overhead press." },
+      { src: "machines/overhead-press-2.jpg", caption: "Weight stack. The pin sits beside the number, in pounds and kilograms." },
+    ],
+    "BODY MASTERS CM 282 - Lateral Raise": [
+      { src: "machines/lateral-raise-3.jpg", caption: "Instructions plate: CM 282 Lateral Raise." },
+      { src: "machines/lateral-raise-1.jpg", caption: "Body Masters CM 282 lateral raise, seat and arm pads." },
+      { src: "machines/lateral-raise-2.jpg", caption: "Weight stack, numbers in pounds." },
+    ],
+    "BODY MASTERS LE 411 - 45° Super Seated Leg Press": [
+      { src: "machines/le411-leg-press-2.jpg", caption: "Instructions plate: LE 411, 45 degree super seated leg press." },
+      { src: "machines/le411-leg-press-1.jpg", caption: "Body Masters LE 411 leg press. Plates load on the sled arms." },
+    ],
+    "Hoist ROC-IT - Leg Curl": [
+      { src: "machines/hoist-leg-curl-1.jpg", caption: "Hoist ROC-IT leg curl, RS-1402." },
+      { src: "machines/hoist-leg-curl-2.jpg", caption: "Weight chart: pin number to pounds." },
+    ],
+    "Hoist ROC-IT - Leg Extension": [
+      { src: "machines/hoist-leg-extension-1.jpg", caption: "Hoist ROC-IT leg extension, RS-1401." },
+      { src: "machines/hoist-leg-extension-2.jpg", caption: "Weight chart: pin number to pounds." },
+    ],
+    "Body Masters - Standing Calf Raise": [
+      { src: "machines/calf-raise-1.jpg", caption: "Body Masters standing calf raise and its weight stack." },
+    ],
     "Eagle by Cybex - Leg Press": [
+      { src: "machines/eagle-by-cybex-leg-press-2.jpg", caption: "Instructions plate, Eagle leg press, tag E12." },
       { src: "machines/eagle-by-cybex-leg-press.jpg", caption: "Weight stack. Pin numbers run up the side of the plates." },
+    ],
+    "Hoist ROC-IT - Biceps Curl": [
+      { src: "machines/hoist-biceps-curl-1.jpg", caption: "Hoist ROC-IT biceps curl, RS-1102." },
+      { src: "machines/hoist-biceps-curl-2.jpg", caption: "Weight chart: pin number to pounds." },
+    ],
+    "Body Masters - CM 226 - Tricep Press": [
+      { src: "machines/tricep-press-3.jpg", caption: "Instructions plate: CM 226 Triceps Press." },
+      { src: "machines/tricep-press-1.jpg", caption: "Body Masters CM 226 tricep press station with the V-bar." },
+      { src: "machines/tricep-press-2.jpg", caption: "Weight stack, numbers in pounds." },
+    ],
+    "Icarian -Tricep Ext. 208": [
+      { src: "machines/icarian-tricep-3.jpg", caption: "Instructions plate: Icarian Triceps Extension 208." },
+      { src: "machines/icarian-tricep-1.jpg", caption: "Icarian tricep extension 208, seat and pad." },
+      { src: "machines/icarian-tricep-2.jpg", caption: "Weight stack, pounds and kilograms." },
+    ],
+    "Preacher Curls - Olympic EZ bar": [
+      { src: "machines/preacher-curl-1.jpg", caption: "Preacher bench with the Olympic EZ bar." },
+      { src: "machines/preacher-curl-2.jpg", caption: "Plates on the bar." },
     ],
   };
   const exercisePhotoBtn = document.getElementById("exercise-photo");
