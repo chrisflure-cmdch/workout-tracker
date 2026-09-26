@@ -15,10 +15,25 @@ function json(data, status, headers) {
   });
 }
 
+// A set normally arrives as JSON. A Week 0 set that carries machine photos
+// arrives as multipart (a `payload` JSON field plus `photos` files), so the
+// Worker can hand the files to Notion untouched instead of decoding base64.
+async function readLogRequest(request) {
+  const type = request.headers.get("Content-Type") || "";
+  if (type.includes("multipart/form-data")) {
+    const form = await request.formData();
+    const body = JSON.parse(form.get("payload"));
+    const photos = form.getAll("photos").filter((f) => typeof f !== "string" && f.size > 0);
+    return { body, photos };
+  }
+  return { body: await request.json(), photos: [] };
+}
+
 async function handleLog(request, env, headers) {
   let body;
+  let photos;
   try {
-    body = await request.json();
+    ({ body, photos } = await readLogRequest(request));
   } catch {
     return json({ error: "Invalid JSON" }, 400, headers);
   }
@@ -75,11 +90,86 @@ async function handleLog(request, env, headers) {
   }
 
   const page = await notionRes.json();
+
+  // Machine photos are an extra too: the set is already saved, so a failed
+  // upload only lowers `photosAttached`, it never turns the log into an error.
+  const photosSent = Math.min(photos.length, MAX_PHOTOS);
+  const photosAttached = photosSent ? await attachPhotos(env, page.id, photos, `${date} ${exercise}`) : 0;
+
   return json(
-    { ok: true, id: page.id, linked, exerciseLinked: linked && !!links.exerciseId, workoutLinked: linked && !!links.workoutId },
+    {
+      ok: true,
+      id: page.id,
+      linked,
+      exerciseLinked: linked && !!links.exerciseId,
+      workoutLinked: linked && !!links.workoutId,
+      photosSent,
+      photosAttached,
+    },
     200,
     headers
   );
+}
+
+const MAX_PHOTOS = 3;
+const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+
+async function uploadPhoto(env, file, filename) {
+  if (file.size > MAX_PHOTO_BYTES) throw new Error("photo too large");
+  const contentType = /^image\//.test(file.type) ? file.type : "image/jpeg";
+
+  const create = await fetch("https://api.notion.com/v1/file_uploads", {
+    method: "POST",
+    headers: notionHeaders(env),
+    body: JSON.stringify({ filename, content_type: contentType }),
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!create.ok) throw new Error(`file_uploads create ${create.status}`);
+  const { id } = await create.json();
+
+  const form = new FormData();
+  form.append("file", file, filename);
+  const send = await fetch(`https://api.notion.com/v1/file_uploads/${id}/send`, {
+    method: "POST",
+    // No Content-Type here: fetch sets the multipart boundary itself.
+    headers: { Authorization: `Bearer ${env.NOTION_TOKEN}`, "Notion-Version": NOTION_VERSION },
+    body: form,
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!send.ok) throw new Error(`file_uploads send ${send.status}`);
+  return { id, filename };
+}
+
+// Returns how many photos ended up attached to the set's Photos property.
+async function attachPhotos(env, pageId, photos, label) {
+  const slug = label.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "machine";
+  const uploaded = [];
+  for (const [i, file] of photos.slice(0, MAX_PHOTOS).entries()) {
+    try {
+      uploaded.push(await uploadPhoto(env, file, `${slug}-${i + 1}.jpg`));
+    } catch {
+      // skip this photo
+    }
+  }
+  if (!uploaded.length) return 0;
+
+  try {
+    const res = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
+      method: "PATCH",
+      headers: notionHeaders(env),
+      body: JSON.stringify({
+        properties: {
+          Photos: {
+            files: uploaded.map((u) => ({ type: "file_upload", file_upload: { id: u.id }, name: u.filename })),
+          },
+        },
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    return res.ok ? uploaded.length : 0;
+  } catch {
+    return 0;
+  }
 }
 
 function notionHeaders(env) {

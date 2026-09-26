@@ -436,6 +436,102 @@
     font-size: 14px;
     font-weight: 600;
   }
+  .machine-photo-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    margin: 0;
+    padding: 6px 14px 6px 6px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .machine-photo-btn[hidden] { display: none; }
+  .machine-photo-btn img { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; }
+  #photo-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.9);
+  }
+  #photo-lightbox[hidden] { display: none; }
+  .lightbox-stage { display: flex; align-items: center; gap: 8px; width: min(100%, 560px); }
+  .lightbox-slides {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .lightbox-slides::-webkit-scrollbar { display: none; }
+  .lightbox-slides img {
+    flex: 0 0 100%;
+    width: 100%;
+    max-height: 68vh;
+    object-fit: contain;
+    scroll-snap-align: center;
+    border-radius: 12px;
+  }
+  .lightbox-nav {
+    margin: 0;
+    padding: 0;
+    width: 36px;
+    height: 56px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 28px;
+    line-height: 1;
+  }
+  .lightbox-nav[hidden] { display: none; }
+  .lightbox-dots { display: flex; gap: 8px; }
+  .lightbox-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+  .lightbox-dots span.on { background: var(--glow); }
+  #photo-lightbox-caption { color: var(--text); font-size: 15px; text-align: center; max-width: 480px; }
+  .lightbox-hint { color: var(--text-dim); font-size: 12px; }
+  #photo-block { display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: var(--text-dim); }
+  .photo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .photo-buttons { display: flex; gap: 8px; }
+  .photo-buttons[hidden] { display: none; }
+  .photo-thumbs { display: flex; gap: 10px; }
+  .photo-thumb { position: relative; width: 52px; height: 52px; }
+  .photo-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+  }
+  .photo-remove {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    margin: 0;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--glow);
+    color: #241705;
+    font-size: 14px;
+    line-height: 1;
+  }
   .load-type-choices { display: flex; gap: 10px; }
   .load-type-choices label {
     flex: 1;
@@ -513,6 +609,21 @@
     <a id="exercise-reference-link" href="#" target="_blank" rel="noopener noreferrer">Exercise Video &#8599;</a>
   </div>
 
+  <button type="button" id="exercise-photo" class="machine-photo-btn" hidden>
+    <img id="exercise-photo-thumb" alt="">
+    <span>Machine photo</span>
+  </button>
+  <div id="photo-lightbox" hidden>
+    <div class="lightbox-stage">
+      <button type="button" class="lightbox-nav" id="lightbox-prev" aria-label="Previous photo">&lsaquo;</button>
+      <div class="lightbox-slides" id="lightbox-slides"></div>
+      <button type="button" class="lightbox-nav" id="lightbox-next" aria-label="Next photo">&rsaquo;</button>
+    </div>
+    <div class="lightbox-dots" id="lightbox-dots"></div>
+    <div id="photo-lightbox-caption"></div>
+    <div class="lightbox-hint">Swipe for more, tap outside the photo to close</div>
+  </div>
+
   <div id="standard-fields">
     <label>Week
       <select id="week" required></select>
@@ -542,6 +653,18 @@
       <label id="empty-weight-label" hidden>Empty weight: sled, carriage or bar <span style="color: var(--text-dim); font-weight: 400;">(optional, lbs, leave blank if none)</span>
         <input type="number" id="empty-weight" inputmode="decimal" step="0.5">
       </label>
+      <div id="photo-block">
+        <div>Photo of the weight system <span style="font-weight: 400;">(optional, up to 3, saved with the next set you log)</span></div>
+        <div class="photo-row">
+          <div class="photo-buttons" id="photo-add">
+            <button type="button" class="plate-action" id="photo-take">Take photo</button>
+            <button type="button" class="plate-action" id="photo-choose">Choose photo</button>
+          </div>
+          <div class="photo-thumbs" id="photo-thumbs"></div>
+        </div>
+        <input type="file" id="machine-photo-camera" accept="image/*" capture="environment" hidden>
+        <input type="file" id="machine-photos" accept="image/*" multiple hidden>
+      </div>
     </div>
     <label id="custom-week-label">Week / Block
       <select id="custom-week">
@@ -1506,6 +1629,68 @@
     "Weighted Dead Bug": "https://www.youtube.com/watch?v=oSExv5Iiu80",
   };
 
+  // Machine photos: up to 3 per exercise, the FIRST is the thumbnail chip under
+  // the Exercise dropdown and tapping it opens all of them to swipe through.
+  // Images live in the repo's machines folder, added when an exercise is set
+  // up, so they never expire the way Notion file links do.
+  const EXERCISE_PHOTOS = {
+    "Eagle by Cybex - Leg Press": [
+      { src: "machines/eagle-by-cybex-leg-press.jpg", caption: "Weight stack. Pin numbers run up the side of the plates." },
+    ],
+  };
+  const exercisePhotoBtn = document.getElementById("exercise-photo");
+  const exercisePhotoThumb = document.getElementById("exercise-photo-thumb");
+  const photoLightbox = document.getElementById("photo-lightbox");
+  const lightboxSlides = document.getElementById("lightbox-slides");
+  const lightboxDots = document.getElementById("lightbox-dots");
+  const lightboxCaption = document.getElementById("photo-lightbox-caption");
+  const lightboxPrev = document.getElementById("lightbox-prev");
+  const lightboxNext = document.getElementById("lightbox-next");
+  let lightboxPhotos = [];
+  function lightboxIndex() {
+    return Math.round(lightboxSlides.scrollLeft / Math.max(lightboxSlides.clientWidth, 1));
+  }
+  function syncLightbox() {
+    const i = Math.min(lightboxIndex(), Math.max(lightboxPhotos.length - 1, 0));
+    lightboxDots.querySelectorAll("span").forEach((dot, n) => dot.classList.toggle("on", n === i));
+    lightboxCaption.textContent = lightboxPhotos[i]?.caption || exerciseSelect.value;
+  }
+  function goToPhoto(i) {
+    const n = Math.max(0, Math.min(i, lightboxPhotos.length - 1));
+    lightboxSlides.scrollTo({ left: n * lightboxSlides.clientWidth, behavior: "smooth" });
+  }
+  exercisePhotoBtn.addEventListener("click", () => {
+    lightboxPhotos = EXERCISE_PHOTOS[exerciseSelect.value] || [];
+    if (!lightboxPhotos.length) return;
+    lightboxSlides.innerHTML = lightboxPhotos.map((p, i) => `<img src="${p.src}" alt="${exerciseSelect.value} photo ${i + 1}">`).join("");
+    lightboxDots.innerHTML = lightboxPhotos.map(() => "<span></span>").join("");
+    const many = lightboxPhotos.length > 1;
+    lightboxPrev.hidden = !many;
+    lightboxNext.hidden = !many;
+    lightboxDots.hidden = !many;
+    photoLightbox.hidden = false;
+    lightboxSlides.scrollLeft = 0;
+    syncLightbox();
+  });
+  lightboxSlides.addEventListener("scroll", syncLightbox);
+  lightboxPrev.addEventListener("click", (e) => {
+    e.stopPropagation();
+    goToPhoto(lightboxIndex() - 1);
+  });
+  lightboxNext.addEventListener("click", (e) => {
+    e.stopPropagation();
+    goToPhoto(lightboxIndex() + 1);
+  });
+  // Tapping the photo itself keeps it open; tapping the dark area closes it.
+  lightboxSlides.addEventListener("click", (e) => e.stopPropagation());
+  photoLightbox.addEventListener("click", () => (photoLightbox.hidden = true));
+  document.addEventListener("keydown", (e) => {
+    if (photoLightbox.hidden) return;
+    if (e.key === "Escape") photoLightbox.hidden = true;
+    if (e.key === "ArrowLeft") goToPhoto(lightboxIndex() - 1);
+    if (e.key === "ArrowRight") goToPhoto(lightboxIndex() + 1);
+  });
+
   // Real pin number + color, confirmed from Chris's own logged notes against
   // the machine's stack chart (not guessed) -- shown next to "Set pin to N
   // lbs" for weights he's actually verified. A weight with no entry here
@@ -1578,7 +1763,6 @@
   const platesInput = document.getElementById("plates-per-side");
   const platesTotal = document.getElementById("plates-total");
   const notesInput = document.getElementById("notes");
-  const actualRow = document.getElementById("actual-row");
   const weekSelect = document.getElementById("week");
   const phaseSelect = document.getElementById("phase");
   const pWeight = document.getElementById("p-weight");
@@ -1838,13 +2022,13 @@
   // week picks from Working Set 1-4, defaulting to Working Set 1.
   const WEEK_ZERO_LABEL = "Week 0 - Initial Phase";
   function syncCustomPhase() {
-    // Week 0 is just weight and reps, so drop the targets and put Rest
-    // (optional) under the actual weight/reps instead of above them.
+    // Week 0 is just weight and reps, so drop the targets and the rest timer
+    // (custom Rest is never saved, it only feeds the countdown).
     const weekZero = !isCoreWorkMode() && customWeek.value === WEEK_ZERO_LABEL;
     syncLoadType(weekZero && isTypedCustomMode());
     customTargetRow.hidden = isCoreWorkMode() || weekZero;
-    if (weekZero) actualRow.after(customRestLabel);
-    else customTargetRow.after(customRestLabel);
+    customRestLabel.hidden = weekZero;
+    if (weekZero) customRest.value = "";
     const numbered = isCoreWorkMode() || weekZero;
     const labels = numbered
       ? [`Set ${customSetNumber.value || 1}`]
@@ -1924,6 +2108,67 @@
   }
   platesInput.addEventListener("input", syncPlateTotal);
   emptyWeightInput.addEventListener("input", syncPlateTotal);
+  // Machine photos (Week 0, typed custom): shrunk here so a phone shot uploads
+  // fast, held until the next set is logged, then sent along with it.
+  const MAX_MACHINE_PHOTOS = 3;
+  const machinePhotoInput = document.getElementById("machine-photos");
+  const photoThumbs = document.getElementById("photo-thumbs");
+  let machinePhotos = [];
+  async function shrinkPhoto(file) {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    if (bitmap.close) bitmap.close();
+    return new Promise((resolve, reject) =>
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("photo"))), "image/jpeg", 0.82)
+    );
+  }
+  function renderPhotoThumbs() {
+    photoThumbs.innerHTML = "";
+    machinePhotos.forEach((p, i) => {
+      const wrap = document.createElement("div");
+      wrap.className = "photo-thumb";
+      wrap.innerHTML = `<img src="${p.url}" alt="Weight system photo ${i + 1}"><button type="button" class="photo-remove" data-index="${i}" aria-label="Remove photo ${i + 1}">&times;</button>`;
+      photoThumbs.appendChild(wrap);
+    });
+    document.getElementById("photo-add").hidden = machinePhotos.length >= MAX_MACHINE_PHOTOS;
+  }
+  function clearMachinePhotos() {
+    machinePhotos.forEach((p) => URL.revokeObjectURL(p.url));
+    machinePhotos = [];
+    renderPhotoThumbs();
+  }
+  // "Take photo" opens the camera straight away (capture), "Choose photo" opens
+  // the library for pictures already on the phone. Both feed the same list.
+  const machineCameraInput = document.getElementById("machine-photo-camera");
+  document.getElementById("photo-take").addEventListener("click", () => machineCameraInput.click());
+  document.getElementById("photo-choose").addEventListener("click", () => machinePhotoInput.click());
+  async function addMachinePhotos(input) {
+    const chosen = Array.from(input.files).slice(0, MAX_MACHINE_PHOTOS - machinePhotos.length);
+    input.value = "";
+    for (const file of chosen) {
+      try {
+        const blob = await shrinkPhoto(file);
+        machinePhotos.push({ blob, url: URL.createObjectURL(blob) });
+      } catch (e) {
+        statusEl.className = "err";
+        statusEl.textContent = "Could not read that photo, try another.";
+      }
+    }
+    renderPhotoThumbs();
+  }
+  machinePhotoInput.addEventListener("change", () => addMachinePhotos(machinePhotoInput));
+  machineCameraInput.addEventListener("change", () => addMachinePhotos(machineCameraInput));
+  photoThumbs.addEventListener("click", (e) => {
+    const btn = e.target.closest(".photo-remove");
+    if (!btn) return;
+    const [removed] = machinePhotos.splice(Number(btn.dataset.index), 1);
+    URL.revokeObjectURL(removed.url);
+    renderPhotoThumbs();
+  });
   function loadTypeNotePrefix() {
     if (loadTypeBlock.hidden) return "";
     const type = loadTypeChoice();
@@ -1951,6 +2196,7 @@
     emptyWeightInput.value = "";
     platesInput.value = "";
     syncPlateTotal();
+    clearMachinePhotos();
     // Coded exercises keep their own progression, so leave those fields alone.
     if (isFreeEntryMode()) {
       actualWeightInput.value = "";
@@ -1978,12 +2224,19 @@
     exerciseReference.hidden = !referenceUrl;
     if (referenceUrl) exerciseReferenceLink.href = referenceUrl;
 
+    const machinePhotos = EXERCISE_PHOTOS[exerciseSelect.value] || [];
+    const machinePhoto = machinePhotos[0];
+    exercisePhotoBtn.hidden = !machinePhoto;
+    if (machinePhoto) {
+      exercisePhotoBtn.querySelector("span").textContent =
+        machinePhotos.length > 1 ? `Machine photos (${machinePhotos.length})` : "Machine photo";
+      exercisePhotoThumb.src = machinePhoto.src;
+      exercisePhotoThumb.alt = `${exerciseSelect.value} machine`;
+    }
+
     customWeekLabel.hidden = isCoreWork;
     customPhaseRow.hidden = isCoreWork;
     customTargetRow.hidden = isCoreWork;
-    // Rest may have been moved under the actual row for Week 0; it lives in
-    // custom-fields, so put it back before the standard form takes over.
-    customTargetRow.after(customRestLabel);
 
     weekSelect.required = !freeEntry;
     phaseSelect.required = !freeEntry;
@@ -2649,17 +2902,41 @@
       restString = step.rest;
     }
 
+    // Week 0 machine photos ride along with this set as a multipart request;
+    // every other save stays plain JSON.
+    const photosToSend = custom && !loadTypeBlock.hidden ? machinePhotos.slice() : [];
+    if (photosToSend.length) statusEl.textContent = "Saving and uploading photos...";
+
     try {
-      const res = await fetch(`${WORKER_URL}/log`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      let requestInit;
+      if (photosToSend.length) {
+        const form = new FormData();
+        form.append("payload", JSON.stringify(payload));
+        photosToSend.forEach((p, i) => form.append("photos", p.blob, `machine-${i + 1}.jpg`));
+        requestInit = { method: "POST", body: form };
+      } else {
+        requestInit = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        };
+      }
+      const res = await fetch(`${WORKER_URL}/log`, requestInit);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to save");
 
       statusEl.className = "ok";
       statusEl.textContent = "Saved.";
+      if (photosToSend.length) {
+        if (data.photosAttached === photosToSend.length) {
+          statusEl.textContent = `Saved. ${data.photosAttached} photo${data.photosAttached === 1 ? "" : "s"} attached.`;
+          clearMachinePhotos();
+        } else {
+          // The set is saved; keep the photos so they go with the next set.
+          statusEl.className = "err";
+          statusEl.textContent = `Saved, but only ${data.photosAttached || 0} of ${photosToSend.length} photos attached. They will go with the next set.`;
+        }
+      }
       document.getElementById("reps").value = "";
       document.getElementById("notes").value = "";
 
