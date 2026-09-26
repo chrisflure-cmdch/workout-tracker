@@ -584,7 +584,7 @@
 
   <label>Exercise
     <select id="exercise" required>
-      <option value="Incline Bench Press">Incline Bench Press</option>
+      <option value="Incline Bench Press BM Smith Machine">Incline Bench Press BM Smith Machine</option>
       <option value="Squat (Body Masters PS300)">Squat (Body Masters PS300)</option>
       <option value="Body Masters 310 Chest Press - Vertical">Body Masters 310 Chest Press - Vertical</option>
       <option value="Precor - Vertical Row 309">Precor - Vertical Row 309</option>
@@ -793,11 +793,12 @@
 
   // Source of truth: 4-Week Smith Machine Strength Progression Tracker.
   // Incline Bench Press corrected 2026-09-06 for the 23 lb Body Masters counterbalanced bar.
+  // Renamed 2026-09-26 to "Incline Bench Press BM Smith Machine" (its 15 logged Notion rows were renamed too).
   // Squat (Body Masters PS300) added 2026-09-07 for the 62 lb sled, warm-up starting at
   // one 45 lb plate/side, ramping to a 260 lb max-effort target (nearest clean plate
   // combo: 262 lbs).
   const EXERCISE_PLANS = {
-    "Incline Bench Press": {
+    "Incline Bench Press BM Smith Machine": {
       "Week 1 - Foundation": [
         { phase: "Warm-Up Set 1", weight: 23, reps: "10 reps", rest: "60 sec", plates: [] },
         { phase: "Warm-Up Set 2", weight: 73, reps: "5 reps", rest: "60 sec", plates: [25] },
@@ -1573,7 +1574,7 @@
   // populateExerciseOptions, below) -- keep this in sync with EXERCISE_PLANS'
   // keys whenever an exercise is added.
   const ALL_EXERCISES = [
-    "Incline Bench Press",
+    "Incline Bench Press BM Smith Machine",
     "Squat (Body Masters PS300)",
     "Body Masters 310 Chest Press - Vertical",
     "Precor - Vertical Row 309",
@@ -1602,7 +1603,7 @@
   // Category / Workout Day added 2026-09-13. Assigned by muscle group worked
   // (per each machine's own "Major Muscles Worked" callout where available).
   const EXERCISE_CATEGORIES = {
-    "Incline Bench Press": "Chest and Back",
+    "Incline Bench Press BM Smith Machine": "Chest and Back",
     "Body Masters 310 Chest Press - Vertical": "Chest and Back",
     "Precor - Vertical Row 309": "Chest and Back",
     "BODY MASTERS CM 240 - Lat Pull-down": "Chest and Back",
@@ -1648,6 +1649,9 @@
   // Images live in the repo's machines folder, added when an exercise is set
   // up, so they never expire the way Notion file links do.
   const EXERCISE_PHOTOS = {
+    "Incline Bench Press BM Smith Machine": [
+      { src: "machines/incline-bench-smith-1.jpg", caption: "Body Masters Smith machine with the adjustable incline bench. Plates load on the bar." },
+    ],
     "Squat (Body Masters PS300)": [
       { src: "machines/squat-ps300-2.jpg", caption: "Instructions plate: PS 300 Squat." },
       { src: "machines/squat-ps300-1.jpg", caption: "Body Masters PS300 squat machine. Plates load on the bar ends." },
