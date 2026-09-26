@@ -52,18 +52,22 @@ async function handleLog(request, env, headers) {
     properties.Notes = { rich_text: [{ text: { content: String(notes).slice(0, 2000) } }] };
   }
 
-  const notionRes = await fetch("https://api.notion.com/v1/pages", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.NOTION_TOKEN}`,
-      "Notion-Version": NOTION_VERSION,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      parent: { database_id: env.NOTION_DATABASE_ID },
-      properties,
-    }),
-  });
+  // Grip, the library link and the day's Workouts row are extras. Logging the set
+  // itself must never fail because of them, so every lookup fails soft.
+  const links = await lookupLinks(env, date, exercise);
+  const extras = {};
+  const grip = gripFromPhase(phase);
+  if (grip) extras.Grip = { select: { name: grip } };
+  if (links.exerciseId) extras["Exercise Link"] = { relation: [{ id: links.exerciseId }] };
+  if (links.workoutId) extras.Workout = { relation: [{ id: links.workoutId }] };
+
+  let notionRes = await createLogPage(env, { ...properties, ...extras });
+  let linked = true;
+  if (!notionRes.ok) {
+    // Retry once without the extras in case Notion rejected one of them.
+    notionRes = await createLogPage(env, properties);
+    linked = false;
+  }
 
   if (!notionRes.ok) {
     const detail = await notionRes.text();
@@ -71,7 +75,98 @@ async function handleLog(request, env, headers) {
   }
 
   const page = await notionRes.json();
-  return json({ ok: true, id: page.id }, 200, headers);
+  return json(
+    { ok: true, id: page.id, linked, exerciseLinked: linked && !!links.exerciseId, workoutLinked: linked && !!links.workoutId },
+    200,
+    headers
+  );
+}
+
+function notionHeaders(env) {
+  return {
+    Authorization: `Bearer ${env.NOTION_TOKEN}`,
+    "Notion-Version": NOTION_VERSION,
+    "Content-Type": "application/json",
+  };
+}
+
+function createLogPage(env, properties) {
+  return fetch("https://api.notion.com/v1/pages", {
+    method: "POST",
+    headers: notionHeaders(env),
+    body: JSON.stringify({
+      parent: { database_id: env.NOTION_DATABASE_ID },
+      properties,
+    }),
+  });
+}
+
+function gripFromPhase(phase) {
+  if (/\(Outer\)$/.test(phase)) return "Outer";
+  if (/\(Inner\)$/.test(phase)) return "Inner";
+  return null; // single-grip rows leave Grip blank, matching the backfill
+}
+
+const WORKOUT_LABELS = {
+  "Chest and Back": "Chest and Back",
+  "Shoulders/Bi's & Tri's": "Shoulders, Biceps and Triceps",
+  Legs: "Legs",
+};
+
+// Returns the first matching page, null when nothing matches, and throws on any failure.
+async function queryFirst(env, databaseId, filter) {
+  const res = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+    method: "POST",
+    headers: notionHeaders(env),
+    body: JSON.stringify({ filter, page_size: 1 }),
+    signal: AbortSignal.timeout(4000),
+  });
+  if (!res.ok) throw new Error(`query ${res.status}`);
+  const data = await res.json();
+  return data.results?.[0] ?? null;
+}
+
+async function createWorkoutRow(env, date, category) {
+  const label = WORKOUT_LABELS[category];
+  const res = await fetch("https://api.notion.com/v1/pages", {
+    method: "POST",
+    headers: notionHeaders(env),
+    body: JSON.stringify({
+      parent: { database_id: env.WORKOUTS_DATABASE_ID },
+      properties: {
+        Name: { title: [{ text: { content: `Workout ${date}${label ? ` (${label})` : ""}` } }] },
+        Date: { date: { start: date } },
+      },
+    }),
+    signal: AbortSignal.timeout(4000),
+  });
+  if (!res.ok) throw new Error(`create ${res.status}`);
+  return (await res.json()).id;
+}
+
+async function lookupLinks(env, date, exercise) {
+  const out = { exerciseId: null, workoutId: null };
+  if (!env.EXERCISE_LIBRARY_DATABASE_ID || !env.WORKOUTS_DATABASE_ID) return out;
+
+  const soft = (promise) => promise.catch(() => undefined);
+  const [library, workout] = await Promise.all([
+    soft(queryFirst(env, env.EXERCISE_LIBRARY_DATABASE_ID, { property: "Name", title: { equals: exercise } })),
+    soft(queryFirst(env, env.WORKOUTS_DATABASE_ID, { property: "Date", date: { equals: date } })),
+  ]);
+
+  if (library) out.exerciseId = library.id;
+
+  // undefined means the lookup failed, so do not risk creating a duplicate day row.
+  if (workout) {
+    out.workoutId = workout.id;
+  } else if (workout === null) {
+    try {
+      out.workoutId = await createWorkoutRow(env, date, library?.properties?.Category?.select?.name);
+    } catch {
+      // leave unlinked
+    }
+  }
+  return out;
 }
 
 async function handleEmailReport(request, env, headers) {
