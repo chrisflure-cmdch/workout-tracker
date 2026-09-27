@@ -825,6 +825,7 @@
       <option value="progression">Progression (Weeks 1 to 4)</option>
       <option value="freestyle">Freestyle</option>
       <option value="week0">Week 0 (new machines)</option>
+      <option value="offplan">All off-plan (Freestyle + Week 0)</option>
     </select>
   </label>
   <div class="range-nav">
@@ -3298,8 +3299,10 @@
 
   // The Progress tab's "Show" dropdown. Progression is the coded Weeks 1 to 4
   // (Working Set / Max Attempt phases only); Freestyle and Week 0 chart the top
-  // weight per day from rows saved under those Week values, so the three views
-  // never mix.
+  // weight per day from rows saved under those Week values, so those views
+  // never mix with Progression. "offplan" shows Freestyle and Week 0 together.
+  // The three off-plan views only count a set when at least one rep was done
+  // (needsReps), so a failed attempt at 0 reps never shows up as a top weight.
   const PROGRESS_MODES = {
     progression: {
       title: "working weight",
@@ -3310,11 +3313,19 @@
       title: "freestyle top weight",
       empty: "No freestyle sets logged in this range yet.",
       pick: (r) => r.week === "Freestyle",
+      needsReps: true,
     },
     week0: {
       title: "Week 0 top weight",
       empty: "No Week 0 sets logged in this range yet.",
       pick: (r) => r.week === "Week 0 - Initial Phase",
+      needsReps: true,
+    },
+    offplan: {
+      title: "off-plan top weight",
+      empty: "No Freestyle or Week 0 sets logged in this range yet.",
+      pick: (r) => r.week === "Freestyle" || r.week === "Week 0 - Initial Phase",
+      needsReps: true,
     },
   };
   const progressModeSelect = document.getElementById("progress-mode");
@@ -3326,11 +3337,12 @@
     for (const g of groups) {
       for (const r of g.rows) {
         if (!cfg.pick(r)) continue;
+        if (cfg.needsReps && !(Number(r.reps) > 0)) continue;
         // Multi-grip exercises (phase ends "(Outer)"/"(Inner)") get tracked as
         // separate series under the same exercise -- otherwise a same-day
         // Math.max would let the stronger grip's weight silently swallow the
         // weaker grip's data.
-        const gripMatch = (mode === "progression" || mode === "freestyle") && r.phase ? r.phase.match(/\((Outer|Inner)\)$/) : null;
+        const gripMatch = (mode === "progression" || mode === "freestyle" || mode === "offplan") && r.phase ? r.phase.match(/\((Outer|Inner)\)$/) : null;
         const ex = r.exercise || "Unknown";
         const grip = gripMatch ? gripMatch[1] : "_single";
         if (!byExercise[ex]) byExercise[ex] = {};
@@ -3355,7 +3367,7 @@
           return `<div class="progression-card"><h3>${ex} — ${cfg.title}</h3>${buildLineChartSVG(points)}</div>`;
         }
         const series = gripKeys.map((k) => ({
-          label: `${k} Grip`,
+          label: k === "_single" ? "Week 0 (no grip)" : `${k} Grip`,
           color: GRIP_COLORS[k] || "#ffcf7a",
           points: datePointsFrom(grips[k]),
         }));
