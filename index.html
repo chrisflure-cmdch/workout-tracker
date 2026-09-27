@@ -2938,9 +2938,24 @@
     "Legs": { lit: ["thighs", "calves"], color: "#9adf9e", bg: "rgba(154, 223, 158, 0.10)" },
     "Core Work": { lit: ["abs"], color: "#c9c3f7", bg: "rgba(201, 195, 247, 0.12)" },
   };
+  // Category icons (2026-09-27): Chris's own hand-drawn muscle-group art,
+  // background removed and recolored to the app's dim/lit palette (see
+  // Projects\Chris's Workouts\Outputs\2026-09-27 - Core icon comparison).
+  // BODY_PARTS/the SVG builder below stay as a fallback for any category
+  // that ever lacks a PNG.
+  const ICON_PNG_MAP = {
+    "Chest and Back": "icons/category-chest-and-back.png",
+    "Shoulders/Bi's & Tri's": "icons/category-shoulders-bi-tri.png",
+    "Legs": "icons/category-legs.png",
+    "Core Work": "icons/category-core-work.png",
+  };
   function bodyIconSVG(category, height) {
     const cfg = CATEGORY_ICONS[category];
     if (!cfg) return "";
+    const src = ICON_PNG_MAP[category];
+    if (src) {
+      return `<img class="body-icon" src="${src}" height="${height}" style="width:auto;display:block" alt="${category}">`;
+    }
     const parts = Object.keys(BODY_PARTS)
       .map((p) => `<g class="m${cfg.lit.includes(p) ? " hi" : ""}">${BODY_PARTS[p]}</g>`)
       .join("");
