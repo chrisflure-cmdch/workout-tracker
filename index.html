@@ -2930,7 +2930,129 @@
   dateInput.addEventListener("change", loadToday);
   loadToday();
 
-  function buildReportDoc(dateISO, rows) {
+  // Muscles worked, printed in the PDF legend under the table. First-pass wording
+  // (2026-09-26) from each machine's function and the Precor decals, for Chris to
+  // review. Keys are the exact dropdown values. An exercise missing here still
+  // gets a legend entry if it has a photo.
+  const EXERCISE_MUSCLES = {
+    "Incline Bench Press BM Smith Machine": "Upper chest, front shoulders, triceps.",
+    "Squat (Body Masters PS300)": "Quads, glutes, hamstrings, lower back.",
+    "Body Masters 310 Chest Press - Vertical": "Chest, front shoulders, triceps.",
+    "Precor - Vertical Row 309": "Lats, mid back, rear shoulders, biceps.",
+    "BODY MASTERS CM 240 - Lat Pull-down": "Lats, upper back, biceps, rear shoulders.",
+    "Nautilus Nitro - Vertical Chest": "Chest, front shoulders, triceps.",
+    "Nautilus Nitro - Overhead Press": "Shoulders, triceps, upper chest.",
+    "BODY MASTERS CM 282 - Lateral Raise": "Side shoulders, upper traps.",
+    "BODY MASTERS LE 411 - 45° Super Seated Leg Press": "Quads, glutes, hamstrings.",
+    "Hoist ROC-IT - Leg Curl": "Hamstrings, calves.",
+    "Hoist ROC-IT - Leg Extension": "Quads.",
+    "Body Masters - Standing Calf Raise": "Calves.",
+    "Eagle by Cybex - Leg Press": "Quads, glutes, hamstrings.",
+    "Hoist ROC-IT - Biceps Curl": "Biceps, forearms.",
+    "Body Masters - CM 226 - Tricep Press": "Triceps, front shoulders.",
+    "Icarian -Tricep Ext. 208": "Triceps.",
+    "Preacher Curls - Olympic EZ bar": "Biceps, forearms.",
+    "Precor - Chest Press": "Chest, front shoulders, triceps.",
+    "Precor - Incline Press": "Upper chest, front shoulders, triceps.",
+    "Precor - Lat Pulldown": "Lats, upper back, biceps, rear shoulders.",
+    "Precor - Low Row": "Lats, mid back, rear shoulders, biceps.",
+    "Precor - Seated Row": "Mid back, lats, rear shoulders, biceps.",
+    "Dumbbell Ab Flutter Kick": "Lower abs, hip flexors.",
+    "Dumbbell High Ab Crunch": "Upper abs.",
+    "Dumbbell Ab Bicycles": "Abs, obliques, hip flexors.",
+    "Russian Twists": "Obliques, abs.",
+    "Knee Tucks": "Lower abs, hip flexors.",
+    "Dumbbell Farmer's Carry": "Grip, forearms, upper traps, core.",
+    "Weighted Dead Bug": "Deep core, abs.",
+  };
+
+  // Small square thumbnail of an exercise's first machine photo for the PDF
+  // legend, as a JPEG data URL (null when there is no photo or it will not load).
+  // Cached for the session so a second report does not reload the images.
+  const thumbCache = {};
+  function loadThumb(exercise) {
+    if (exercise in thumbCache) return thumbCache[exercise];
+    const photo = (EXERCISE_PHOTOS[exercise] || [])[0];
+    thumbCache[exercise] = photo
+      ? new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            try {
+              const size = 160;
+              const c = document.createElement("canvas");
+              c.width = c.height = size;
+              const ctx = c.getContext("2d");
+              ctx.fillStyle = "#fff";
+              ctx.fillRect(0, 0, size, size);
+              const s = Math.min(img.width, img.height);
+              ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+              resolve(c.toDataURL("image/jpeg", 0.8));
+            } catch (e) {
+              resolve(null);
+            }
+          };
+          img.onerror = () => resolve(null);
+          img.src = photo.src;
+        })
+      : Promise.resolve(null);
+    return thumbCache[exercise];
+  }
+
+  // "Exercises and muscles worked" under the table: one entry per exercise done
+  // that day, in table order, two columns, continuing onto a new page if needed.
+  function drawLegend(doc, items) {
+    const pageH = doc.internal.pageSize.getHeight();
+    const colX = [14, 108];
+    const colW = 88;
+    const rowH = 26;
+    const thumb = 21;
+    let y = doc.lastAutoTable.finalY + 12;
+    if (y + 8 + rowH > pageH - 12) {
+      doc.addPage();
+      y = 20;
+    }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(40, 40, 40);
+    doc.text("Exercises and muscles worked", 14, y);
+    doc.setDrawColor(200);
+    doc.line(14, y + 2, 196, y + 2);
+    y += 8;
+    for (let i = 0; i < items.length; i += 2) {
+      if (y + rowH > pageH - 12) {
+        doc.addPage();
+        y = 20;
+      }
+      for (let c = 0; c < 2; c++) {
+        const it = items[i + c];
+        if (!it) continue;
+        const x = colX[c];
+        let tx = x;
+        if (it.thumb) {
+          doc.addImage(it.thumb, "JPEG", x, y, thumb, thumb);
+          tx = x + thumb + 3;
+        }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(30, 30, 30);
+        const nameLines = doc.splitTextToSize(it.exercise, colW - (tx - x)).slice(0, 2);
+        doc.text(nameLines, tx, y + 4);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(90, 90, 90);
+        const muscleLines = doc.splitTextToSize(it.muscles, colW - (tx - x)).slice(0, 3);
+        doc.text(muscleLines, tx, y + 4 + nameLines.length * 4 + 1);
+      }
+      y += rowH;
+    }
+    doc.setTextColor(0, 0, 0);
+  }
+
+  async function buildReportDoc(dateISO, rows) {
+    const exercisesDone = [];
+    for (const r of rows) if (r.exercise && !exercisesDone.includes(r.exercise)) exercisesDone.push(r.exercise);
+    const thumbs = {};
+    await Promise.all(exercisesDone.map(async (ex) => { thumbs[ex] = await loadThumb(ex); }));
     const [y, m, d] = dateISO.split("-").map(Number);
     const parsed = new Date(y, m - 1, d);
     const weekday = parsed.toLocaleDateString("en-US", { weekday: "long" });
@@ -2957,6 +3079,11 @@
       columnStyles: { 0: { cellWidth: 62 }, 1: { cellWidth: 40 }, 2: { cellWidth: 20 } },
     });
 
+    const legendItems = exercisesDone
+      .map((ex) => ({ exercise: ex, muscles: EXERCISE_MUSCLES[ex] || "", thumb: thumbs[ex] || null }))
+      .filter((it) => it.muscles || it.thumb);
+    if (legendItems.length) drawLegend(doc, legendItems);
+
     return doc;
   }
 
@@ -2965,7 +3092,7 @@
     btn.disabled = true;
     btn.textContent = "Sending...";
     try {
-      const doc = buildReportDoc(dateISO, rows);
+      const doc = await buildReportDoc(dateISO, rows);
       const pdfBase64 = doc.output("datauristring").split(",")[1];
       const res = await fetch(`${WORKER_URL}/email-report`, {
         method: "POST",
@@ -2998,19 +3125,19 @@
   function wireReportButtons(container, dateISO, rows) {
     const downloadBtn = container.querySelector('[data-action="download"]');
     const emailBtn = container.querySelector('[data-action="email"]');
-    downloadBtn.addEventListener("click", () => {
-      buildReportDoc(dateISO, rows).save(`workout-log-${dateISO}.pdf`);
+    downloadBtn.addEventListener("click", async () => {
+      (await buildReportDoc(dateISO, rows)).save(`workout-log-${dateISO}.pdf`);
     });
     emailBtn.addEventListener("click", () => sendReportEmail(dateISO, rows, emailBtn));
   }
 
   const downloadPdfBtn = document.getElementById("download-pdf-btn");
-  downloadPdfBtn.addEventListener("click", () => {
+  downloadPdfBtn.addEventListener("click", async () => {
     if (!lastTodayRows.length) {
       alert("Nothing logged for this date yet.");
       return;
     }
-    buildReportDoc(dateInput.value, lastTodayRows).save(`workout-log-${dateInput.value}.pdf`);
+    (await buildReportDoc(dateInput.value, lastTodayRows)).save(`workout-log-${dateInput.value}.pdf`);
   });
 
   const emailPdfBtn = document.getElementById("email-pdf-btn");
