@@ -707,6 +707,11 @@
         <label><input type="radio" name="load-type" value="Plate loaded"> Plate loaded</label>
         <label><input type="radio" name="load-type" value="Pin loaded"> Pin loaded</label>
       </div>
+      <div class="load-type-choices" id="grip-choices">
+        <label><input type="radio" name="week0-grip" value="" checked> No grip</label>
+        <label><input type="radio" name="week0-grip" value="Outer"> Outer grip</label>
+        <label><input type="radio" name="week0-grip" value="Inner"> Inner grip</label>
+      </div>
       <label id="empty-weight-label" hidden>Empty weight: sled, carriage or bar <span style="color: var(--text-dim); font-weight: 400;">(optional, lbs, leave blank if none)</span>
         <input type="number" id="empty-weight" inputmode="decimal" step="0.5">
       </label>
@@ -2167,6 +2172,21 @@
   const customTargetRow = document.getElementById("custom-target-row");
   const customRestLabel = document.getElementById("custom-rest-label");
   const loadTypeBlock = document.getElementById("load-type-block");
+  // Optional grip for a Week 0 set (Outer or Inner). Coded two-grip machines
+  // carry their grip in the phase name instead; see gripOf().
+  const week0GripRadios = Array.from(document.querySelectorAll('input[name="week0-grip"]'));
+  function week0GripChoice() {
+    if (loadTypeBlock.hidden) return "";
+    const picked = week0GripRadios.find((r) => r.checked);
+    return picked ? picked.value : "";
+  }
+  // The grip of a saved row: the Grip column when it has one (Week 0 sets and
+  // the Worker's own fill-in), else the "(Outer)"/"(Inner)" phase suffix.
+  function gripOf(r) {
+    if (r.grip === "Outer" || r.grip === "Inner") return r.grip;
+    const m = r.phase ? r.phase.match(/\((Outer|Inner)\)$/) : null;
+    return m ? m[1] : "";
+  }
   const loadTypeRadios = Array.from(document.querySelectorAll('input[name="load-type"]'));
   const emptyWeightLabel = document.getElementById("empty-weight-label");
   const emptyWeightInput = document.getElementById("empty-weight");
@@ -2714,6 +2734,7 @@
     customSetNumber.value = 1;
     if (!hadPrevious) return;
     loadTypeRadios.forEach((r) => (r.checked = false));
+    week0GripRadios.forEach((r) => (r.checked = r.value === ""));
     emptyWeightInput.value = "";
     platesInput.value = "";
     syncPlateTotal();
@@ -2923,16 +2944,17 @@
 
     doc.autoTable({
       startY: 53,
-      head: [["Exercise", "Phase", "Weight", "Reps"]],
+      head: [["Exercise", "Phase", "Grip", "Weight", "Reps"]],
       body: rows.map((r) => [
         r.exercise ?? "",
         r.phase ?? "",
+        gripOf(r),
         `${r.actualWeight ?? ""} lbs`,
         String(r.reps ?? ""),
       ]),
       styles: { fontSize: 10, cellPadding: 3 },
       headStyles: { fillColor: [40, 40, 40] },
-      columnStyles: { 0: { cellWidth: 65 }, 1: { cellWidth: 50 } },
+      columnStyles: { 0: { cellWidth: 62 }, 1: { cellWidth: 40 }, 2: { cellWidth: 20 } },
     });
 
     return doc;
@@ -3327,9 +3349,8 @@
         // separate series under the same exercise -- otherwise a same-day
         // Math.max would let the stronger grip's weight silently swallow the
         // weaker grip's data.
-        const gripMatch = r.phase ? r.phase.match(/\((Outer|Inner)\)$/) : null;
         const ex = r.exercise || "Unknown";
-        const grip = gripMatch ? gripMatch[1] : "_single";
+        const grip = gripOf(r) || "_single";
         if (!byExercise[ex]) byExercise[ex] = {};
         if (!byExercise[ex][grip]) byExercise[ex][grip] = {};
         const w = r.actualWeight ?? 0;
@@ -3507,6 +3528,7 @@
         actualWeight: actualWeightInput.value,
         reps: document.getElementById("reps").value,
         notes: loadTypeNotePrefix() + document.getElementById("notes").value,
+        grip: week0GripChoice() || null,
       };
       restString = customRest.value.trim();
     } else if (freestyle) {

@@ -38,7 +38,7 @@ async function handleLog(request, env, headers) {
     return json({ error: "Invalid JSON" }, 400, headers);
   }
 
-  const { date, exercise, week, phase, setNumber, targetWeight, targetReps, actualWeight, reps, notes } = body;
+  const { date, exercise, week, phase, setNumber, targetWeight, targetReps, actualWeight, reps, notes, grip: bodyGrip } = body;
 
   if (!date || !exercise || !week || !phase || setNumber == null || actualWeight == null || reps == null) {
     return json({ error: "Missing required field" }, 400, headers);
@@ -71,7 +71,9 @@ async function handleLog(request, env, headers) {
   // itself must never fail because of them, so every lookup fails soft.
   const links = await lookupLinks(env, date, exercise);
   const extras = {};
-  const grip = gripFromPhase(phase);
+  // A coded two-grip phase carries its grip in the name; Week 0 sets have no
+  // suffix, so the page sends the chosen grip explicitly (Outer or Inner only).
+  const grip = gripFromPhase(phase) || (bodyGrip === "Outer" || bodyGrip === "Inner" ? bodyGrip : null);
   if (grip) extras.Grip = { select: { name: grip } };
   if (links.exerciseId) extras["Exercise Link"] = { relation: [{ id: links.exerciseId }] };
   if (links.workoutId) extras.Workout = { relation: [{ id: links.workoutId }] };
@@ -335,6 +337,7 @@ function rowFromPage(page) {
     exercise: p.Exercise?.select?.name ?? null,
     week: p.Week?.select?.name ?? null,
     phase: p.Phase?.select?.name ?? null,
+    grip: p.Grip?.select?.name ?? null,
     setNumber: p["Set Number"]?.number ?? null,
     targetWeight: p["Target Weight"]?.number ?? null,
     targetReps: p["Target Reps"]?.rich_text?.[0]?.plain_text ?? "",
