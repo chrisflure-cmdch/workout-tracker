@@ -297,37 +297,41 @@ async function handleEmailReport(request, env, headers) {
   return json({ ok: true }, 200, headers);
 }
 
+// Every page matching `query` (filter + sorts), following Notion's pagination
+// up to 5 pages of 100. Returns { results } or { error } with Notion's reply.
+async function queryAll(env, query) {
+  const results = [];
+  let cursor;
+  for (let page = 0; page < 5; page++) {
+    const res = await fetch(`https://api.notion.com/v1/databases/${env.NOTION_DATABASE_ID}/query`, {
+      method: "POST",
+      headers: notionHeaders(env),
+      body: JSON.stringify({ ...query, page_size: 100, ...(cursor ? { start_cursor: cursor } : {}) }),
+    });
+    if (!res.ok) return { error: await res.text() };
+    const data = await res.json();
+    results.push(...(data.results || []));
+    if (!data.has_more) break;
+    cursor = data.next_cursor;
+  }
+  return { results };
+}
+
+function rowsResponse({ results, error }, headers) {
+  if (error) return json({ error: "Notion query failed", detail: error }, 502, headers);
+  return json({ rows: results.map(rowFromPage) }, 200, headers);
+}
+
 async function handleToday(request, env, headers) {
-  const url = new URL(request.url);
-  const date = url.searchParams.get("date");
+  const date = new URL(request.url).searchParams.get("date");
   if (!date) {
     return json({ error: "Missing date query param" }, 400, headers);
   }
-
-  const notionRes = await fetch(
-    `https://api.notion.com/v1/databases/${env.NOTION_DATABASE_ID}/query`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.NOTION_TOKEN}`,
-        "Notion-Version": NOTION_VERSION,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        filter: { property: "Date", date: { equals: date } },
-        sorts: [{ timestamp: "created_time", direction: "ascending" }],
-      }),
-    }
-  );
-
-  if (!notionRes.ok) {
-    const detail = await notionRes.text();
-    return json({ error: "Notion query failed", detail }, 502, headers);
-  }
-
-  const data = await notionRes.json();
-  const rows = (data.results || []).map(rowFromPage);
-  return json({ rows }, 200, headers);
+  const found = await queryAll(env, {
+    filter: { property: "Date", date: { equals: date } },
+    sorts: [{ timestamp: "created_time", direction: "ascending" }],
+  });
+  return rowsResponse(found, headers);
 }
 
 function rowFromPage(page) {
@@ -354,100 +358,34 @@ async function handleRange(request, env, headers) {
   if (!start || !end) {
     return json({ error: "Missing start/end query params" }, 400, headers);
   }
-
-  const rows = [];
-  let cursor = undefined;
-  for (let page = 0; page < 5; page++) {
-    const notionRes = await fetch(
-      `https://api.notion.com/v1/databases/${env.NOTION_DATABASE_ID}/query`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${env.NOTION_TOKEN}`,
-          "Notion-Version": NOTION_VERSION,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filter: {
-            and: [
-              { property: "Date", date: { on_or_after: start } },
-              { property: "Date", date: { on_or_before: end } },
-            ],
-          },
-          sorts: [
-            { property: "Date", direction: "ascending" },
-            { timestamp: "created_time", direction: "ascending" },
-          ],
-          page_size: 100,
-          ...(cursor ? { start_cursor: cursor } : {}),
-        }),
-      }
-    );
-
-    if (!notionRes.ok) {
-      const detail = await notionRes.text();
-      return json({ error: "Notion query failed", detail }, 502, headers);
-    }
-
-    const data = await notionRes.json();
-    rows.push(...(data.results || []).map(rowFromPage));
-    if (!data.has_more) break;
-    cursor = data.next_cursor;
-  }
-
-  return json({ rows }, 200, headers);
+  const found = await queryAll(env, {
+    filter: {
+      and: [
+        { property: "Date", date: { on_or_after: start } },
+        { property: "Date", date: { on_or_before: end } },
+      ],
+    },
+    sorts: [
+      { property: "Date", direction: "ascending" },
+      { timestamp: "created_time", direction: "ascending" },
+    ],
+  });
+  return rowsResponse(found, headers);
 }
 
 async function handleHistory(request, env, headers) {
-  const url = new URL(request.url);
-  const exercise = url.searchParams.get("exercise");
+  const exercise = new URL(request.url).searchParams.get("exercise");
   if (!exercise) {
     return json({ error: "Missing exercise query param" }, 400, headers);
   }
-
-  const rows = [];
-  let cursor = undefined;
-  for (let page = 0; page < 5; page++) {
-    const notionRes = await fetch(
-      `https://api.notion.com/v1/databases/${env.NOTION_DATABASE_ID}/query`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${env.NOTION_TOKEN}`,
-          "Notion-Version": NOTION_VERSION,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filter: { property: "Exercise", select: { equals: exercise } },
-          sorts: [
-            { property: "Date", direction: "ascending" },
-            { property: "Set Number", direction: "ascending" },
-          ],
-          page_size: 100,
-          ...(cursor ? { start_cursor: cursor } : {}),
-        }),
-      }
-    );
-
-    if (!notionRes.ok) {
-      const detail = await notionRes.text();
-      return json({ error: "Notion query failed", detail }, 502, headers);
-    }
-
-    const data = await notionRes.json();
-    for (const page of data.results || []) {
-      const p = page.properties;
-      rows.push({
-        date: p.Date?.date?.start ?? null,
-        week: p.Week?.select?.name ?? null,
-        phase: p.Phase?.select?.name ?? null,
-      });
-    }
-    if (!data.has_more) break;
-    cursor = data.next_cursor;
-  }
-
-  return json({ rows }, 200, headers);
+  const found = await queryAll(env, {
+    filter: { property: "Exercise", select: { equals: exercise } },
+    sorts: [
+      { property: "Date", direction: "ascending" },
+      { property: "Set Number", direction: "ascending" },
+    ],
+  });
+  return rowsResponse(found, headers);
 }
 
 export default {
