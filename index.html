@@ -855,258 +855,143 @@
   // Squat (Body Masters PS300) added 2026-09-07 for the 62 lb sled, warm-up starting at
   // one 45 lb plate/side, ramping to a 260 lb max-effort target (nearest clean plate
   // combo: 262 lbs).
-  const EXERCISE_PLANS = {
+  // Plate-loaded coded machines and what the empty bar or sled weighs (from the
+  // coded plans, confirmed by Chris). Freestyle on these shows the same
+  // tap-to-add plate picker as Week 0, adding 2 x one side to this weight.
+  const FREESTYLE_PLATE_MACHINES = {
+    "Incline Bench Press BM Smith Machine": { empty: 23, part: "bar" },
+    "Squat (Body Masters PS300)": { empty: 62, part: "sled" },
+    "BODY MASTERS LE 411 - 45° Super Seated Leg Press": { empty: 30, part: "sled" },
+    "Preacher Curls - Olympic EZ bar": { empty: 25, part: "bar" },
+    "Precor - Chest Press": { empty: 12, part: "carriage" },
+    "Precor - Incline Press": { empty: 12, part: "carriage" },
+    "Precor - Lat Pulldown": { empty: 5, part: "carriage" },
+    "Precor - Low Row": { empty: 15, part: "carriage" },
+    "Precor - Seated Row": { empty: 10, part: "carriage" },
+  };
+
+  // Every coded exercise runs the same 4-week template; only the weights differ,
+  // so each one below lists just its weights, week by week, in phase order:
+  //   Week 1: Warm-Up 1-4, Working 1-4     Week 2: Warm-Up 1-4, Working 1-3
+  //   Week 3: Warm-Up 1-2, Working 1-3     Week 4: Warm-Up 1-4 (or 1-5), Max Attempt
+  // A two-grip machine gives [Outer, Inner] pairs instead of single weights, and
+  // gets "(Outer)"/"(Inner)" rows interleaved at every rung. Reps and rests come
+  // from the template. Options: capRest (Chris's 3-minute rest cap, used on the
+  // Precor machines) and maxRest (a different rest after the Max Attempt).
+  // Plates per side are worked out from FREESTYLE_PLATE_MACHINES' empty weight;
+  // anything not listed there is pin-loaded and shows no plates.
+  const WARM_UPS = [
+    { reps: "5 reps", rest: "60 sec" },
+    { reps: "3 reps", rest: "90 sec" },
+    { reps: "1 rep", rest: "2 min" },
+    { reps: "1 rep", rest: "3 min" },
+    { reps: "1 rep", rest: "3 min" },
+  ];
+  const PLAN_WEEKS = [
+    { week: "Week 1 - Foundation", warmUps: 4, working: { reps: "2 reps", rest: "3-5 min" } },
+    { week: "Week 2 - Neurological Peak", warmUps: 4, working: { reps: "2 reps", rest: "4-5 min" } },
+    { week: "Week 3 - De-load", warmUps: 2, working: { reps: "3 reps (Slow)", rest: "2 min" } },
+    { week: "Week 4 - Max Effort Test" }, // every weight but the last is a warm-up
+  ];
+  const CAPPED_RESTS = { "3-5 min": "3 min", "4-5 min": "3 min", "5 min before retry": "3 min before retry" };
+  // Greedy split of one side's load. The coded plans never use 35s.
+  function platesPerSide(side) {
+    const plates = [];
+    for (const p of [45, 25, 10, 5, 2.5]) {
+      while (side >= p) {
+        plates.push(p);
+        side -= p;
+      }
+    }
+    return plates;
+  }
+  function buildPlan(name, { weeks, capRest = false, maxRest = "5 min before retry" }) {
+    const machine = FREESTYLE_PLATE_MACHINES[name];
+    const plates = (weight) => (machine ? platesPerSide((weight - machine.empty) / 2) : []);
+    const plan = {};
+    PLAN_WEEKS.forEach(({ week, warmUps, working }, i) => {
+      const weights = weeks[i];
+      const steps = weights.flatMap((w, n) => {
+        const isMax = !working && n === weights.length - 1;
+        const isWarmUp = working ? n < warmUps : !isMax;
+        const phase = isMax ? "Max Attempt" : isWarmUp ? `Warm-Up Set ${n + 1}` : `Working Set ${n - warmUps + 1}`;
+        const { reps, rest } = isMax ? { reps: "1 rep (Max Effort)", rest: maxRest } : isWarmUp ? WARM_UPS[n] : working;
+        const rows = Array.isArray(w) ? [[" (Outer)", w[0]], [" (Inner)", w[1]]] : [["", w]];
+        return rows.map(([grip, weight]) => ({
+          phase: phase + grip,
+          weight,
+          reps,
+          rest: capRest ? CAPPED_RESTS[rest] || rest : rest,
+          plates: plates(weight),
+        }));
+      });
+      // Nothing to rest for after the week's last set, except a lone Max Attempt,
+      // which carries its retry rest.
+      const last = steps[steps.length - 1];
+      if (working || last.phase !== "Max Attempt") last.rest = "—";
+      plan[week] = steps;
+    });
+    return plan;
+  }
+  const PLAN_WEIGHTS = {
     "Incline Bench Press BM Smith Machine": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 23, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 73, reps: "3 reps", rest: "90 sec", plates: [25] },
-        { phase: "Warm-Up Set 3", weight: 113, reps: "1 rep", rest: "2 min", plates: [45] },
-        { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "3 min", plates: [45, 10] },
-        { phase: "Working Set 1", weight: 143, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 5] },
-        { phase: "Working Set 2", weight: 143, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 5] },
-        { phase: "Working Set 3", weight: 143, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 5] },
-        { phase: "Working Set 4", weight: 143, reps: "2 reps", rest: "—", plates: [45, 10, 5] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 23, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 73, reps: "3 reps", rest: "90 sec", plates: [25] },
-        { phase: "Warm-Up Set 3", weight: 113, reps: "1 rep", rest: "2 min", plates: [45] },
-        { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "3 min", plates: [45, 10] },
-        { phase: "Working Set 1", weight: 153, reps: "2 reps", rest: "4-5 min", plates: [45, 10, 10] },
-        { phase: "Working Set 2", weight: 153, reps: "2 reps", rest: "4-5 min", plates: [45, 10, 10] },
-        { phase: "Working Set 3", weight: 153, reps: "2 reps", rest: "—", plates: [45, 10, 10] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 23, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 73, reps: "3 reps", rest: "90 sec", plates: [25] },
-        { phase: "Working Set 1", weight: 113, reps: "3 reps (Slow)", rest: "2 min", plates: [45] },
-        { phase: "Working Set 2", weight: 113, reps: "3 reps (Slow)", rest: "2 min", plates: [45] },
-        { phase: "Working Set 3", weight: 113, reps: "3 reps (Slow)", rest: "—", plates: [45] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 23, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 73, reps: "3 reps", rest: "90 sec", plates: [25] },
-        { phase: "Warm-Up Set 3", weight: 113, reps: "1 rep", rest: "2 min", plates: [45] },
-        { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "3 min", plates: [45, 10] },
-        { phase: "Max Attempt", weight: 143, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [45, 10, 5] },
+      weeks: [
+        [23, 73, 113, 133, 143, 143, 143, 143],
+        [23, 73, 113, 133, 153, 153, 153],
+        [23, 73, 113, 113, 113],
+        [23, 73, 113, 133, 143],
       ],
     },
     "Squat (Body Masters PS300)": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 152, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2", weight: 172, reps: "3 reps", rest: "90 sec", plates: [45, 10] },
-        { phase: "Warm-Up Set 3", weight: 192, reps: "1 rep", rest: "2 min", plates: [45, 10, 10] },
-        { phase: "Warm-Up Set 4", weight: 202, reps: "1 rep", rest: "3 min", plates: [45, 25] },
-        { phase: "Working Set 1", weight: 242, reps: "2 reps", rest: "3-5 min", plates: [45, 45] },
-        { phase: "Working Set 2", weight: 242, reps: "2 reps", rest: "3-5 min", plates: [45, 45] },
-        { phase: "Working Set 3", weight: 242, reps: "2 reps", rest: "3-5 min", plates: [45, 45] },
-        { phase: "Working Set 4", weight: 242, reps: "2 reps", rest: "—", plates: [45, 45] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 152, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2", weight: 172, reps: "3 reps", rest: "90 sec", plates: [45, 10] },
-        { phase: "Warm-Up Set 3", weight: 192, reps: "1 rep", rest: "2 min", plates: [45, 10, 10] },
-        { phase: "Warm-Up Set 4", weight: 202, reps: "1 rep", rest: "3 min", plates: [45, 25] },
-        { phase: "Working Set 1", weight: 252, reps: "2 reps", rest: "4-5 min", plates: [45, 45, 5] },
-        { phase: "Working Set 2", weight: 252, reps: "2 reps", rest: "4-5 min", plates: [45, 45, 5] },
-        { phase: "Working Set 3", weight: 252, reps: "2 reps", rest: "—", plates: [45, 45, 5] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 152, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2", weight: 172, reps: "3 reps", rest: "90 sec", plates: [45, 10] },
-        { phase: "Working Set 1", weight: 192, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10, 10] },
-        { phase: "Working Set 2", weight: 192, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10, 10] },
-        { phase: "Working Set 3", weight: 192, reps: "3 reps (Slow)", rest: "—", plates: [45, 10, 10] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 152, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2", weight: 172, reps: "3 reps", rest: "90 sec", plates: [45, 10] },
-        { phase: "Warm-Up Set 3", weight: 192, reps: "1 rep", rest: "2 min", plates: [45, 10, 10] },
-        { phase: "Warm-Up Set 4", weight: 202, reps: "1 rep", rest: "3 min", plates: [45, 25] },
+      weeks: [
+        [152, 172, 192, 202, 242, 242, 242, 242],
+        [152, 172, 192, 202, 252, 252, 252],
+        [152, 172, 192, 192, 192],
         // 2026-09-19: Week 2 showed 262 x 3/3/5 (target 2), est. 1RM ~295-306,
         // so the old 262 max was already beaten. Warm-Up 5 is now the proven
         // 262; Max Attempt steps to 282 (62 lb sled + 2 x 110 lb/side).
-        { phase: "Warm-Up Set 5", weight: 262, reps: "1 rep", rest: "3 min", plates: [45, 45, 10] },
-        { phase: "Max Attempt", weight: 282, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [45, 45, 10, 10] },
+        [152, 172, 192, 202, 262, 282],
       ],
     },
     // Body Masters 310 Chest Press - Vertical added 2026-09-08 for the pin-loaded
     // stack (base 130 lbs), ramping to a 220 lb max-effort target.
     "Body Masters 310 Chest Press - Vertical": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 130, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 150, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 170, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 190, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 200, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 200, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 200, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 200, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 130, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 150, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 170, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 190, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 210, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 210, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 210, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 130, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 150, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 170, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 170, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 170, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 130, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 150, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 170, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 190, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 210, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 220, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      weeks: [
+        [130, 150, 170, 190, 200, 200, 200, 200],
+        [130, 150, 170, 190, 210, 210, 210],
+        [130, 150, 170, 170, 170],
+        [130, 150, 170, 190, 210, 220],
       ],
     },
     // Precor - Vertical Row 309 added 2026-09-08 for the pin-loaded stack
     // (base 70 lbs), ramping to a 120 lb max-effort target.
     "Precor - Vertical Row 309": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 70, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 80, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 90, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 100, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 105, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 105, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 105, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 105, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 70, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 80, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 90, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 100, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 110, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 110, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 110, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 70, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 80, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 90, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 90, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 90, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 70, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 80, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 90, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 100, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 115, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 120, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      weeks: [
+        [70, 80, 90, 100, 105, 105, 105, 105],
+        [70, 80, 90, 100, 110, 110, 110],
+        [70, 80, 90, 90, 90],
+        [70, 80, 90, 100, 115, 120],
       ],
     },
     // BODY MASTERS CM 240 - Lat Pull-down added 2026-09-08 for the pin-loaded
     // stack (base 80 lbs), ramping to a 150 lb max-effort target.
     "BODY MASTERS CM 240 - Lat Pull-down": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 80, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 95, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 110, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 125, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 135, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 135, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 135, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 135, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 80, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 95, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 110, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 110, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 130, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 130, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 130, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 80, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 95, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 110, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 110, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 110, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 80, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 95, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 110, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 110, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 130, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 140, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      weeks: [
+        [80, 95, 110, 125, 135, 135, 135, 135],
+        [80, 95, 110, 110, 130, 130, 130],
+        [80, 95, 110, 110, 110],
+        [80, 95, 110, 110, 130, 140],
       ],
     },
     // Nautilus Nitro - Vertical Chest added 2026-09-08 (base 110 lbs, 190 lb
     // max). Updated 2026-09-13 with an Outer-grip track (base 100, max 165),
     // interleaved Outer-then-Inner same as the Overhead Press machine.
     "Nautilus Nitro - Vertical Chest": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 100, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 110, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 120, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 130, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3 (Outer)", weight: 135, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 3 (Inner)", weight: 150, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4 (Outer)", weight: 145, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 4 (Inner)", weight: 165, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1 (Outer)", weight: 150, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 1 (Inner)", weight: 175, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2 (Outer)", weight: 150, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2 (Inner)", weight: 175, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3 (Outer)", weight: 150, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3 (Inner)", weight: 175, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4 (Outer)", weight: 150, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4 (Inner)", weight: 175, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 100, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 110, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 120, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 130, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3 (Outer)", weight: 135, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 3 (Inner)", weight: 150, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4 (Outer)", weight: 140, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 4 (Inner)", weight: 155, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1 (Outer)", weight: 145, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 1 (Inner)", weight: 160, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2 (Outer)", weight: 145, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2 (Inner)", weight: 160, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3 (Outer)", weight: 145, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3 (Inner)", weight: 160, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 100, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 110, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 120, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 130, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1 (Outer)", weight: 135, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 1 (Inner)", weight: 150, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2 (Outer)", weight: 135, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2 (Inner)", weight: 150, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3 (Outer)", weight: 135, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3 (Inner)", weight: 150, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 100, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 110, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 120, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 130, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3 (Outer)", weight: 135, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 3 (Inner)", weight: 150, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4 (Outer)", weight: 140, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 4 (Inner)", weight: 155, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 5 (Outer)", weight: 145, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 5 (Inner)", weight: 160, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt (Outer)", weight: 150, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
-        { phase: "Max Attempt (Inner)", weight: 165, reps: "1 rep (Max Effort)", rest: "—", plates: [] },
+      weeks: [
+        [[100, 110], [120, 130], [135, 150], [145, 165], [150, 175], [150, 175], [150, 175], [150, 175]],
+        [[100, 110], [120, 130], [135, 150], [140, 155], [145, 160], [145, 160], [145, 160]],
+        [[100, 110], [120, 130], [135, 150], [135, 150], [135, 150]],
+        [[100, 110], [120, 130], [135, 150], [140, 155], [145, 160], [150, 165]],
       ],
     },
     // Nautilus Nitro - Overhead Press added 2026-09-13. One machine, one
@@ -1115,140 +1000,34 @@
     // just moves the pin between the two calls. Kept as one exercise (one
     // week-completion cycle) rather than two, per his request.
     "Nautilus Nitro - Overhead Press": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 50, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 65, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 80, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 95, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3 (Outer)", weight: 110, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 3 (Inner)", weight: 125, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4 (Outer)", weight: 125, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 4 (Inner)", weight: 140, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1 (Outer)", weight: 140, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 1 (Inner)", weight: 155, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2 (Outer)", weight: 140, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2 (Inner)", weight: 155, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3 (Outer)", weight: 140, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3 (Inner)", weight: 155, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4 (Outer)", weight: 140, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4 (Inner)", weight: 155, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 50, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 65, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 80, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 95, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3 (Outer)", weight: 110, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 3 (Inner)", weight: 125, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4 (Outer)", weight: 125, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 4 (Inner)", weight: 140, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1 (Outer)", weight: 125, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 1 (Inner)", weight: 140, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2 (Outer)", weight: 125, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2 (Inner)", weight: 140, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3 (Outer)", weight: 125, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3 (Inner)", weight: 140, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 50, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 65, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 80, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 95, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1 (Outer)", weight: 110, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 1 (Inner)", weight: 125, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2 (Outer)", weight: 110, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2 (Inner)", weight: 125, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3 (Outer)", weight: 110, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3 (Inner)", weight: 125, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 50, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 65, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 80, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 95, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3 (Outer)", weight: 95, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 3 (Inner)", weight: 110, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4 (Outer)", weight: 105, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 4 (Inner)", weight: 120, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt (Outer)", weight: 115, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
-        { phase: "Max Attempt (Inner)", weight: 130, reps: "1 rep (Max Effort)", rest: "—", plates: [] },
+      weeks: [
+        [[50, 65], [80, 95], [110, 125], [125, 140], [140, 155], [140, 155], [140, 155], [140, 155]],
+        [[50, 65], [80, 95], [110, 125], [125, 140], [125, 140], [125, 140], [125, 140]],
+        [[50, 65], [80, 95], [110, 125], [110, 125], [110, 125]],
+        [[50, 65], [80, 95], [95, 110], [105, 120], [115, 130]],
       ],
     },
     // DRAFT added 2026-09-28 from Week 0 calibration on 2026-09-28 (Set 1,3,5,7:
     // 55x10, 70x10, 75x6, 75x6). Not yet confirmed with Chris -- preview only.
     "Precor Icarian - Biceps Curl (Bottom Pulley)": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 55, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 65, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 70, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 70, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 70, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 70, reps: "2 reps", rest: "—", plates: [] },
+      weeks: [
+        [40, 55, 65, 70, 70, 70, 70, 70],
+        [40, 55, 65, 70, 75, 75, 75],
+        [40, 55, 65, 65, 65],
+        [40, 55, 65, 70, 75, 80],
       ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 55, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 65, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 75, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 75, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 75, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 55, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 65, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 65, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 65, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 55, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 65, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 75, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 80, reps: "1 rep (Max Effort)", rest: "—", plates: [] },
-      ],
+      maxRest: "—",
     },
     // DRAFT added 2026-09-28 from Week 0 calibration on 2026-09-28 (Set 2,4,6,8:
     // 55x10, 60x10, 75x6, 70x6). Not yet confirmed with Chris -- preview only.
     "Precor Icarian - Triceps Pushdown (Top Pulley)": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 55, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 65, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 70, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 70, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 70, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 70, reps: "2 reps", rest: "—", plates: [] },
+      weeks: [
+        [40, 55, 65, 70, 70, 70, 70, 70],
+        [40, 55, 65, 70, 75, 75, 75],
+        [40, 55, 65, 65, 65],
+        [40, 55, 65, 70, 75, 80],
       ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 55, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 65, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 75, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 75, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 75, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 55, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 65, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 65, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 65, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 40, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 55, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 65, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 75, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 80, reps: "1 rep (Max Effort)", rest: "—", plates: [] },
-      ],
+      maxRest: "—",
     },
     // BODY MASTERS CM 282 - Lateral Raise added 2026-09-13 (base 30 lbs,
     // 70 lb max). Single grip -- elbow/forearm roller pads, not hand grips,
@@ -1257,39 +1036,11 @@
     // choice the warm-up ramp is compressed (Warm-Up 3/4 share 50 lbs) to
     // keep Working Sets (60) and the Max Attempt (70) as distinct weights.
     "BODY MASTERS CM 282 - Lateral Raise": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 30, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 40, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 60, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 60, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 60, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 60, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 30, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 40, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 60, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 60, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 60, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 30, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 40, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 50, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 50, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 50, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 30, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 40, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 60, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 70, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      weeks: [
+        [30, 40, 50, 50, 60, 60, 60, 60],
+        [30, 40, 50, 50, 60, 60, 60],
+        [30, 40, 50, 50, 50],
+        [30, 40, 50, 50, 60, 70],
       ],
     },
     // BODY MASTERS LE 411 - 45° Super Seated Leg Press added 2026-09-13.
@@ -1298,39 +1049,11 @@
     // max 180. Single grip -- the red handgrips are safety hooks for
     // entry/exit, not an exercise-position choice.
     "BODY MASTERS LE 411 - 45° Super Seated Leg Press": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 55, reps: "5 reps", rest: "60 sec", plates: [10, 2.5] },
-        { phase: "Warm-Up Set 2", weight: 85, reps: "3 reps", rest: "90 sec", plates: [25, 2.5] },
-        { phase: "Warm-Up Set 3", weight: 115, reps: "1 rep", rest: "2 min", plates: [25, 10, 5, 2.5] },
-        { phase: "Warm-Up Set 4", weight: 130, reps: "1 rep", rest: "3 min", plates: [45, 5] },
-        { phase: "Working Set 1", weight: 145, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 2.5] },
-        { phase: "Working Set 2", weight: 145, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 2.5] },
-        { phase: "Working Set 3", weight: 145, reps: "2 reps", rest: "3-5 min", plates: [45, 10, 2.5] },
-        { phase: "Working Set 4", weight: 145, reps: "2 reps", rest: "—", plates: [45, 10, 2.5] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 55, reps: "5 reps", rest: "60 sec", plates: [10, 2.5] },
-        { phase: "Warm-Up Set 2", weight: 85, reps: "3 reps", rest: "90 sec", plates: [25, 2.5] },
-        { phase: "Warm-Up Set 3", weight: 115, reps: "1 rep", rest: "2 min", plates: [25, 10, 5, 2.5] },
-        { phase: "Warm-Up Set 4", weight: 130, reps: "1 rep", rest: "3 min", plates: [45, 5] },
-        { phase: "Working Set 1", weight: 155, reps: "2 reps", rest: "4-5 min", plates: [45, 10, 5, 2.5] },
-        { phase: "Working Set 2", weight: 155, reps: "2 reps", rest: "4-5 min", plates: [45, 10, 5, 2.5] },
-        { phase: "Working Set 3", weight: 155, reps: "2 reps", rest: "—", plates: [45, 10, 5, 2.5] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 55, reps: "5 reps", rest: "60 sec", plates: [10, 2.5] },
-        { phase: "Warm-Up Set 2", weight: 85, reps: "3 reps", rest: "90 sec", plates: [25, 2.5] },
-        { phase: "Working Set 1", weight: 115, reps: "3 reps (Slow)", rest: "2 min", plates: [25, 10, 5, 2.5] },
-        { phase: "Working Set 2", weight: 115, reps: "3 reps (Slow)", rest: "2 min", plates: [25, 10, 5, 2.5] },
-        { phase: "Working Set 3", weight: 115, reps: "3 reps (Slow)", rest: "—", plates: [25, 10, 5, 2.5] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 55, reps: "5 reps", rest: "60 sec", plates: [10, 2.5] },
-        { phase: "Warm-Up Set 2", weight: 85, reps: "3 reps", rest: "90 sec", plates: [25, 2.5] },
-        { phase: "Warm-Up Set 3", weight: 115, reps: "1 rep", rest: "2 min", plates: [25, 10, 5, 2.5] },
-        { phase: "Warm-Up Set 4", weight: 130, reps: "1 rep", rest: "3 min", plates: [45, 5] },
-        { phase: "Warm-Up Set 5", weight: 165, reps: "1 rep", rest: "3 min", plates: [45, 10, 10, 2.5] },
-        { phase: "Max Attempt", weight: 180, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [45, 25, 5] },
+      weeks: [
+        [55, 85, 115, 130, 145, 145, 145, 145],
+        [55, 85, 115, 130, 155, 155, 155],
+        [55, 85, 115, 115, 115],
+        [55, 85, 115, 130, 165, 180],
       ],
     },
     // Hoist ROC-IT - Leg Curl (RS-1402) added 2026-09-13, re-anchored same
@@ -1341,41 +1064,13 @@
     // pattern seen on the Leg Extension and resolved to the logged weight).
     // Same rep scheme as before; only the weights changed.
     "Hoist ROC-IT - Leg Curl": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 47, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 79, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 115, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 152, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 152, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 167, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 167, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 47, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 79, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 115, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 152, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 167, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 167, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 47, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 79, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 115, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 115, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 115, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 47, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 79, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 115, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 133, reps: "1 rep", rest: "3 min", plates: [] },
+      weeks: [
+        [47, 79, 115, 133, 152, 152, 167, 167],
+        [47, 79, 115, 133, 152, 167, 167],
+        [47, 79, 115, 115, 115],
         // 2026-09-19: proven ceiling is 167 x 2 (Pin 9); Week 4 now tops out
         // one pin above it (183 = Pin 10) instead of a 32 lb reach to 199.
-        { phase: "Warm-Up Set 5", weight: 167, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 183, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+        [47, 79, 115, 133, 167, 183],
       ],
     },
     // Hoist ROC-IT - Leg Extension (RS-1401) added 2026-09-13, re-anchored
@@ -1385,41 +1080,13 @@
     // after an app auto-advance glitch produced one inconsistent log entry).
     // Same rep scheme as before; only the weights changed.
     "Hoist ROC-IT - Leg Extension": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 44, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 66, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 78, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 91, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 102, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 115, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 115, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 115, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 44, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 66, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 78, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 91, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 102, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 115, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 115, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 44, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 66, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 78, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 78, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 78, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 44, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 66, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 78, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 91, reps: "1 rep", rest: "3 min", plates: [] },
+      weeks: [
+        [44, 66, 78, 91, 102, 115, 115, 115],
+        [44, 66, 78, 91, 102, 115, 115],
+        [44, 66, 78, 78, 78],
         // 2026-09-19: proven ceiling is 115 x 3 (Pin 8); Week 4 now tops out
         // one pin above it (126 = Pin 9) instead of 138 (Pin 10).
-        { phase: "Warm-Up Set 5", weight: 115, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 126, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+        [44, 66, 78, 91, 115, 126],
       ],
     },
     // Body Masters - Standing Calf Raise added 2026-09-13. Pin-loaded stack
@@ -1428,42 +1095,14 @@
     // brand and exercise per Chris directly. Single grip -- shoulder pads
     // for support, not a hand-grip choice.
     "Body Masters - Standing Calf Raise": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 90, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 120, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 150, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 170, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 180, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 180, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 180, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 180, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 160, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 180, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 220, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 240, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 260, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 260, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 260, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 160, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 180, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 220, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 220, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 220, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 160, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 180, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 220, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 240, reps: "1 rep", rest: "3 min", plates: [] },
+      weeks: [
+        [90, 120, 150, 170, 180, 180, 180, 180],
+        [160, 180, 220, 240, 260, 260, 260],
+        [160, 180, 220, 220, 220],
         // 2026-09-19: stack goes to 500 lb (per Chris), so 300 is no longer the
         // ceiling. Proven 300 x 5 (9/13) and 280 x 5/3 (9/19); Warm-Up 5 is now
         // the proven 300 and Max Attempt steps to 340.
-        { phase: "Warm-Up Set 5", weight: 300, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 340, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+        [160, 180, 220, 240, 300, 340],
       ],
     },
     // Eagle by Cybex - Leg Press added 2026-09-13 (tag E12), re-anchored
@@ -1474,39 +1113,11 @@
     // of them this session) -- no color coding on this stack, unlike the
     // Hoist machines. Same rep scheme as before; only weights changed.
     "Eagle by Cybex - Leg Press": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 60, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 70, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 80, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 90, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 100, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 100, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 100, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 100, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 60, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 70, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 80, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 90, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 100, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 100, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 100, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 60, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 70, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 80, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 80, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 80, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 60, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 70, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 80, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 90, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 110, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 120, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      weeks: [
+        [60, 70, 80, 90, 100, 100, 100, 100],
+        [60, 70, 80, 90, 100, 100, 100],
+        [60, 70, 80, 80, 80],
+        [60, 70, 80, 90, 110, 120],
       ],
     },
     // Hoist ROC-IT - Biceps Curl (RS-1102) added 2026-09-14, built directly
@@ -1517,39 +1128,11 @@
     // machines. Single grip, confirmed by Chris. Week 4 top rungs (88, 93)
     // are projected off the real chart (Pin 9/10), not yet confirmed.
     "Hoist ROC-IT - Biceps Curl": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 45, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 54, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 62, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 77, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 85, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 85, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 85, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 45, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 54, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 62, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 77, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 85, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 85, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 45, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 54, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 62, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 62, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 62, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 45, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 54, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 62, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 88, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 93, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      weeks: [
+        [45, 54, 62, 70, 77, 85, 85, 85],
+        [45, 54, 62, 70, 77, 85, 85],
+        [45, 54, 62, 62, 62],
+        [45, 54, 62, 70, 88, 93],
       ],
     },
     // Body Masters - CM 226 - Tricep Press added 2026-09-14, built directly
@@ -1560,39 +1143,11 @@
     // the decal, negligible). Week 4 top rungs (80, 90) are projected off
     // the visible stack notches, not yet confirmed.
     "Body Masters - CM 226 - Tricep Press": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 30, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 40, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 60, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 70, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 70, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 70, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 30, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 40, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 60, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 70, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 70, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 30, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 40, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 50, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 50, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 50, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 30, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 40, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 50, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 50, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 80, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 90, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      weeks: [
+        [30, 40, 50, 50, 60, 70, 70, 70],
+        [30, 40, 50, 50, 60, 70, 70],
+        [30, 40, 50, 50, 50],
+        [30, 40, 50, 50, 80, 90],
       ],
     },
     // Icarian -Tricep Ext. 208 added 2026-09-14, built directly off Chris's
@@ -1603,39 +1158,11 @@
     // the way through -- no ascending step this session. Week 4 top rungs
     // (90, 100) are projected off the visible stack notches, unconfirmed.
     "Icarian -Tricep Ext. 208": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 50, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 60, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 70, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 80, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 80, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 80, reps: "2 reps", rest: "3-5 min", plates: [] },
-        { phase: "Working Set 4", weight: 80, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 50, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 60, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 70, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Working Set 1", weight: 80, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 2", weight: 80, reps: "2 reps", rest: "4-5 min", plates: [] },
-        { phase: "Working Set 3", weight: 80, reps: "2 reps", rest: "—", plates: [] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 50, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 60, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Working Set 1", weight: 70, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 2", weight: 70, reps: "3 reps (Slow)", rest: "2 min", plates: [] },
-        { phase: "Working Set 3", weight: 70, reps: "3 reps (Slow)", rest: "—", plates: [] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 50, reps: "5 reps", rest: "60 sec", plates: [] },
-        { phase: "Warm-Up Set 2", weight: 60, reps: "3 reps", rest: "90 sec", plates: [] },
-        { phase: "Warm-Up Set 3", weight: 70, reps: "1 rep", rest: "2 min", plates: [] },
-        { phase: "Warm-Up Set 4", weight: 70, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Warm-Up Set 5", weight: 90, reps: "1 rep", rest: "3 min", plates: [] },
-        { phase: "Max Attempt", weight: 100, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [] },
+      weeks: [
+        [50, 60, 70, 70, 80, 80, 80, 80],
+        [50, 60, 70, 70, 80, 80, 80],
+        [50, 60, 70, 70, 70],
+        [50, 60, 70, 70, 90, 100],
       ],
     },
     // Preacher Curls - Olympic EZ bar added 2026-09-14. Plate-loaded, bar
@@ -1647,39 +1174,11 @@
     // working sets -- warm-ups compressed to match (WU1/2 both 35). Week 4
     // top rungs (65, 75) are projected, unconfirmed.
     "Preacher Curls - Olympic EZ bar": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 35, reps: "5 reps", rest: "60 sec", plates: [5] },
-        { phase: "Warm-Up Set 2", weight: 35, reps: "3 reps", rest: "90 sec", plates: [5] },
-        { phase: "Warm-Up Set 3", weight: 45, reps: "1 rep", rest: "2 min", plates: [10] },
-        { phase: "Warm-Up Set 4", weight: 55, reps: "1 rep", rest: "3 min", plates: [10, 5] },
-        { phase: "Working Set 1", weight: 55, reps: "2 reps", rest: "3-5 min", plates: [10, 5] },
-        { phase: "Working Set 2", weight: 55, reps: "2 reps", rest: "3-5 min", plates: [10, 5] },
-        { phase: "Working Set 3", weight: 55, reps: "2 reps", rest: "3-5 min", plates: [10, 5] },
-        { phase: "Working Set 4", weight: 55, reps: "2 reps", rest: "—", plates: [10, 5] },
-      ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 35, reps: "5 reps", rest: "60 sec", plates: [5] },
-        { phase: "Warm-Up Set 2", weight: 35, reps: "3 reps", rest: "90 sec", plates: [5] },
-        { phase: "Warm-Up Set 3", weight: 45, reps: "1 rep", rest: "2 min", plates: [10] },
-        { phase: "Warm-Up Set 4", weight: 55, reps: "1 rep", rest: "3 min", plates: [10, 5] },
-        { phase: "Working Set 1", weight: 55, reps: "2 reps", rest: "4-5 min", plates: [10, 5] },
-        { phase: "Working Set 2", weight: 55, reps: "2 reps", rest: "4-5 min", plates: [10, 5] },
-        { phase: "Working Set 3", weight: 55, reps: "2 reps", rest: "—", plates: [10, 5] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 35, reps: "5 reps", rest: "60 sec", plates: [5] },
-        { phase: "Warm-Up Set 2", weight: 35, reps: "3 reps", rest: "90 sec", plates: [5] },
-        { phase: "Working Set 1", weight: 45, reps: "3 reps (Slow)", rest: "2 min", plates: [10] },
-        { phase: "Working Set 2", weight: 45, reps: "3 reps (Slow)", rest: "2 min", plates: [10] },
-        { phase: "Working Set 3", weight: 45, reps: "3 reps (Slow)", rest: "—", plates: [10] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 35, reps: "5 reps", rest: "60 sec", plates: [5] },
-        { phase: "Warm-Up Set 2", weight: 35, reps: "3 reps", rest: "90 sec", plates: [5] },
-        { phase: "Warm-Up Set 3", weight: 45, reps: "1 rep", rest: "2 min", plates: [10] },
-        { phase: "Warm-Up Set 4", weight: 55, reps: "1 rep", rest: "3 min", plates: [10, 5] },
-        { phase: "Warm-Up Set 5", weight: 65, reps: "1 rep", rest: "3 min", plates: [10, 10] },
-        { phase: "Max Attempt", weight: 75, reps: "1 rep (Max Effort)", rest: "5 min before retry", plates: [25] },
+      weeks: [
+        [35, 35, 45, 55, 55, 55, 55, 55],
+        [35, 35, 45, 55, 55, 55, 55],
+        [35, 35, 45, 45, 45],
+        [35, 35, 45, 55, 65, 75],
       ],
     },
     // Five Precor plate-loaded machines added 2026-09-26 from Chris's Week 0 calibration
@@ -1687,238 +1186,54 @@
     // Press each step up to a weight he only got one rep on, so trim those if needed.
     // Low Row and Seated Row are two-grip machines (Outer and Inner).
     "Precor - Chest Press": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 82, reps: "5 reps", rest: "60 sec", plates: [25, 10] },
-        { phase: "Warm-Up Set 2", weight: 102, reps: "3 reps", rest: "90 sec", plates: [45] },
-        { phase: "Warm-Up Set 3", weight: 122, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-        { phase: "Warm-Up Set 4", weight: 132, reps: "1 rep", rest: "3 min", plates: [45, 10, 5] },
-        { phase: "Working Set 1", weight: 142, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 2", weight: 142, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 3", weight: 142, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 4", weight: 142, reps: "2 reps", rest: "—", plates: [45, 10, 10] },
+      weeks: [
+        [82, 102, 122, 132, 142, 142, 142, 142],
+        [82, 102, 122, 132, 152, 152, 152],
+        [82, 102, 122, 122, 122],
+        [82, 102, 122, 132, 162, 172],
       ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 82, reps: "5 reps", rest: "60 sec", plates: [25, 10] },
-        { phase: "Warm-Up Set 2", weight: 102, reps: "3 reps", rest: "90 sec", plates: [45] },
-        { phase: "Warm-Up Set 3", weight: 122, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-        { phase: "Warm-Up Set 4", weight: 132, reps: "1 rep", rest: "3 min", plates: [45, 10, 5] },
-        { phase: "Working Set 1", weight: 152, reps: "2 reps", rest: "3 min", plates: [45, 25] },
-        { phase: "Working Set 2", weight: 152, reps: "2 reps", rest: "3 min", plates: [45, 25] },
-        { phase: "Working Set 3", weight: 152, reps: "2 reps", rest: "—", plates: [45, 25] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 82, reps: "5 reps", rest: "60 sec", plates: [25, 10] },
-        { phase: "Warm-Up Set 2", weight: 102, reps: "3 reps", rest: "90 sec", plates: [45] },
-        { phase: "Working Set 1", weight: 122, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10] },
-        { phase: "Working Set 2", weight: 122, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10] },
-        { phase: "Working Set 3", weight: 122, reps: "3 reps (Slow)", rest: "—", plates: [45, 10] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 82, reps: "5 reps", rest: "60 sec", plates: [25, 10] },
-        { phase: "Warm-Up Set 2", weight: 102, reps: "3 reps", rest: "90 sec", plates: [45] },
-        { phase: "Warm-Up Set 3", weight: 122, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-        { phase: "Warm-Up Set 4", weight: 132, reps: "1 rep", rest: "3 min", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 5", weight: 162, reps: "1 rep", rest: "3 min", plates: [45, 25, 5] },
-        { phase: "Max Attempt", weight: 172, reps: "1 rep (Max Effort)", rest: "3 min before retry", plates: [45, 25, 10] },
-      ],
+      capRest: true,
     },
     "Precor - Incline Press": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 62, reps: "5 reps", rest: "60 sec", plates: [25] },
-        { phase: "Warm-Up Set 2", weight: 102, reps: "3 reps", rest: "90 sec", plates: [45] },
-        { phase: "Warm-Up Set 3", weight: 122, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-        { phase: "Warm-Up Set 4", weight: 132, reps: "1 rep", rest: "3 min", plates: [45, 10, 5] },
-        { phase: "Working Set 1", weight: 142, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 2", weight: 142, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 3", weight: 142, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 4", weight: 142, reps: "2 reps", rest: "—", plates: [45, 10, 10] },
+      weeks: [
+        [62, 102, 122, 132, 142, 142, 142, 142],
+        [62, 102, 122, 132, 152, 152, 152],
+        [62, 102, 122, 122, 122],
+        [62, 102, 122, 132, 162, 172],
       ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 62, reps: "5 reps", rest: "60 sec", plates: [25] },
-        { phase: "Warm-Up Set 2", weight: 102, reps: "3 reps", rest: "90 sec", plates: [45] },
-        { phase: "Warm-Up Set 3", weight: 122, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-        { phase: "Warm-Up Set 4", weight: 132, reps: "1 rep", rest: "3 min", plates: [45, 10, 5] },
-        { phase: "Working Set 1", weight: 152, reps: "2 reps", rest: "3 min", plates: [45, 25] },
-        { phase: "Working Set 2", weight: 152, reps: "2 reps", rest: "3 min", plates: [45, 25] },
-        { phase: "Working Set 3", weight: 152, reps: "2 reps", rest: "—", plates: [45, 25] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 62, reps: "5 reps", rest: "60 sec", plates: [25] },
-        { phase: "Warm-Up Set 2", weight: 102, reps: "3 reps", rest: "90 sec", plates: [45] },
-        { phase: "Working Set 1", weight: 122, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10] },
-        { phase: "Working Set 2", weight: 122, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10] },
-        { phase: "Working Set 3", weight: 122, reps: "3 reps (Slow)", rest: "—", plates: [45, 10] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 62, reps: "5 reps", rest: "60 sec", plates: [25] },
-        { phase: "Warm-Up Set 2", weight: 102, reps: "3 reps", rest: "90 sec", plates: [45] },
-        { phase: "Warm-Up Set 3", weight: 122, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-        { phase: "Warm-Up Set 4", weight: 132, reps: "1 rep", rest: "3 min", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 5", weight: 162, reps: "1 rep", rest: "3 min", plates: [45, 25, 5] },
-        { phase: "Max Attempt", weight: 172, reps: "1 rep (Max Effort)", rest: "3 min before retry", plates: [45, 25, 10] },
-      ],
+      capRest: true,
     },
     "Precor - Lat Pulldown": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1", weight: 95, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2", weight: 125, reps: "3 reps", rest: "90 sec", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 3", weight: 145, reps: "1 rep", rest: "2 min", plates: [45, 25] },
-        { phase: "Warm-Up Set 4", weight: 155, reps: "1 rep", rest: "3 min", plates: [45, 25, 5] },
-        { phase: "Working Set 1", weight: 165, reps: "2 reps", rest: "3 min", plates: [45, 25, 10] },
-        { phase: "Working Set 2", weight: 165, reps: "2 reps", rest: "3 min", plates: [45, 25, 10] },
-        { phase: "Working Set 3", weight: 165, reps: "2 reps", rest: "3 min", plates: [45, 25, 10] },
-        { phase: "Working Set 4", weight: 165, reps: "2 reps", rest: "—", plates: [45, 25, 10] },
+      weeks: [
+        [95, 125, 145, 155, 165, 165, 165, 165],
+        [95, 125, 145, 155, 175, 175, 175],
+        [95, 125, 145, 145, 145],
+        [95, 125, 145, 155, 175, 185],
       ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1", weight: 95, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2", weight: 125, reps: "3 reps", rest: "90 sec", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 3", weight: 145, reps: "1 rep", rest: "2 min", plates: [45, 25] },
-        { phase: "Warm-Up Set 4", weight: 155, reps: "1 rep", rest: "3 min", plates: [45, 25, 5] },
-        { phase: "Working Set 1", weight: 175, reps: "2 reps", rest: "3 min", plates: [45, 25, 10, 5] },
-        { phase: "Working Set 2", weight: 175, reps: "2 reps", rest: "3 min", plates: [45, 25, 10, 5] },
-        { phase: "Working Set 3", weight: 175, reps: "2 reps", rest: "—", plates: [45, 25, 10, 5] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1", weight: 95, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2", weight: 125, reps: "3 reps", rest: "90 sec", plates: [45, 10, 5] },
-        { phase: "Working Set 1", weight: 145, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 25] },
-        { phase: "Working Set 2", weight: 145, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 25] },
-        { phase: "Working Set 3", weight: 145, reps: "3 reps (Slow)", rest: "—", plates: [45, 25] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1", weight: 95, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2", weight: 125, reps: "3 reps", rest: "90 sec", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 3", weight: 145, reps: "1 rep", rest: "2 min", plates: [45, 25] },
-        { phase: "Warm-Up Set 4", weight: 155, reps: "1 rep", rest: "3 min", plates: [45, 25, 5] },
-        { phase: "Warm-Up Set 5", weight: 175, reps: "1 rep", rest: "3 min", plates: [45, 25, 10, 5] },
-        { phase: "Max Attempt", weight: 185, reps: "1 rep (Max Effort)", rest: "3 min before retry", plates: [45, 45] },
-      ],
+      capRest: true,
     },
     "Precor - Low Row": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 105, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 105, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 115, reps: "3 reps", rest: "90 sec", plates: [45, 5] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 115, reps: "3 reps", rest: "90 sec", plates: [45, 5] },
-        { phase: "Warm-Up Set 3 (Outer)", weight: 125, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-        { phase: "Warm-Up Set 3 (Inner)", weight: 125, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-        { phase: "Warm-Up Set 4 (Outer)", weight: 135, reps: "1 rep", rest: "3 min", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 4 (Inner)", weight: 135, reps: "1 rep", rest: "3 min", plates: [45, 10, 5] },
-        { phase: "Working Set 1 (Outer)", weight: 145, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 1 (Inner)", weight: 145, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 2 (Outer)", weight: 145, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 2 (Inner)", weight: 145, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 3 (Outer)", weight: 145, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 3 (Inner)", weight: 145, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 4 (Outer)", weight: 145, reps: "2 reps", rest: "3 min", plates: [45, 10, 10] },
-        { phase: "Working Set 4 (Inner)", weight: 145, reps: "2 reps", rest: "—", plates: [45, 10, 10] },
+      weeks: [
+        [[105, 105], [115, 115], [125, 125], [135, 135], [145, 145], [145, 145], [145, 145], [145, 145]],
+        [[105, 105], [115, 115], [125, 125], [135, 135], [155, 155], [155, 155], [155, 155]],
+        [[105, 105], [115, 115], [125, 125], [125, 125], [125, 125]],
+        [[105, 105], [115, 115], [125, 125], [135, 135], [155, 155], [165, 165]],
       ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 105, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 105, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 115, reps: "3 reps", rest: "90 sec", plates: [45, 5] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 115, reps: "3 reps", rest: "90 sec", plates: [45, 5] },
-        { phase: "Warm-Up Set 3 (Outer)", weight: 125, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-        { phase: "Warm-Up Set 3 (Inner)", weight: 125, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-        { phase: "Warm-Up Set 4 (Outer)", weight: 135, reps: "1 rep", rest: "3 min", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 4 (Inner)", weight: 135, reps: "1 rep", rest: "3 min", plates: [45, 10, 5] },
-        { phase: "Working Set 1 (Outer)", weight: 155, reps: "2 reps", rest: "3 min", plates: [45, 25] },
-        { phase: "Working Set 1 (Inner)", weight: 155, reps: "2 reps", rest: "3 min", plates: [45, 25] },
-        { phase: "Working Set 2 (Outer)", weight: 155, reps: "2 reps", rest: "3 min", plates: [45, 25] },
-        { phase: "Working Set 2 (Inner)", weight: 155, reps: "2 reps", rest: "3 min", plates: [45, 25] },
-        { phase: "Working Set 3 (Outer)", weight: 155, reps: "2 reps", rest: "3 min", plates: [45, 25] },
-        { phase: "Working Set 3 (Inner)", weight: 155, reps: "2 reps", rest: "—", plates: [45, 25] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 105, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 105, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 115, reps: "3 reps", rest: "90 sec", plates: [45, 5] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 115, reps: "3 reps", rest: "90 sec", plates: [45, 5] },
-        { phase: "Working Set 1 (Outer)", weight: 125, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10] },
-        { phase: "Working Set 1 (Inner)", weight: 125, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10] },
-        { phase: "Working Set 2 (Outer)", weight: 125, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10] },
-        { phase: "Working Set 2 (Inner)", weight: 125, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10] },
-        { phase: "Working Set 3 (Outer)", weight: 125, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 10] },
-        { phase: "Working Set 3 (Inner)", weight: 125, reps: "3 reps (Slow)", rest: "—", plates: [45, 10] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 105, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 105, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 115, reps: "3 reps", rest: "90 sec", plates: [45, 5] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 115, reps: "3 reps", rest: "90 sec", plates: [45, 5] },
-        { phase: "Warm-Up Set 3 (Outer)", weight: 125, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-        { phase: "Warm-Up Set 3 (Inner)", weight: 125, reps: "1 rep", rest: "2 min", plates: [45, 10] },
-        { phase: "Warm-Up Set 4 (Outer)", weight: 135, reps: "1 rep", rest: "3 min", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 4 (Inner)", weight: 135, reps: "1 rep", rest: "3 min", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 5 (Outer)", weight: 155, reps: "1 rep", rest: "3 min", plates: [45, 25] },
-        { phase: "Warm-Up Set 5 (Inner)", weight: 155, reps: "1 rep", rest: "3 min", plates: [45, 25] },
-        { phase: "Max Attempt (Outer)", weight: 165, reps: "1 rep (Max Effort)", rest: "3 min before retry", plates: [45, 25, 5] },
-        { phase: "Max Attempt (Inner)", weight: 165, reps: "1 rep (Max Effort)", rest: "—", plates: [45, 25, 5] },
-      ],
+      capRest: true,
     },
     "Precor - Seated Row": {
-      "Week 1 - Foundation": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 100, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 100, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 130, reps: "3 reps", rest: "90 sec", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 130, reps: "3 reps", rest: "90 sec", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 3 (Outer)", weight: 150, reps: "1 rep", rest: "2 min", plates: [45, 25] },
-        { phase: "Warm-Up Set 3 (Inner)", weight: 150, reps: "1 rep", rest: "2 min", plates: [45, 25] },
-        { phase: "Warm-Up Set 4 (Outer)", weight: 160, reps: "1 rep", rest: "3 min", plates: [45, 25, 5] },
-        { phase: "Warm-Up Set 4 (Inner)", weight: 170, reps: "1 rep", rest: "3 min", plates: [45, 25, 10] },
-        { phase: "Working Set 1 (Outer)", weight: 170, reps: "2 reps", rest: "3 min", plates: [45, 25, 10] },
-        { phase: "Working Set 1 (Inner)", weight: 180, reps: "2 reps", rest: "3 min", plates: [45, 25, 10, 5] },
-        { phase: "Working Set 2 (Outer)", weight: 170, reps: "2 reps", rest: "3 min", plates: [45, 25, 10] },
-        { phase: "Working Set 2 (Inner)", weight: 180, reps: "2 reps", rest: "3 min", plates: [45, 25, 10, 5] },
-        { phase: "Working Set 3 (Outer)", weight: 170, reps: "2 reps", rest: "3 min", plates: [45, 25, 10] },
-        { phase: "Working Set 3 (Inner)", weight: 180, reps: "2 reps", rest: "3 min", plates: [45, 25, 10, 5] },
-        { phase: "Working Set 4 (Outer)", weight: 170, reps: "2 reps", rest: "3 min", plates: [45, 25, 10] },
-        { phase: "Working Set 4 (Inner)", weight: 180, reps: "2 reps", rest: "—", plates: [45, 25, 10, 5] },
+      weeks: [
+        [[100, 100], [130, 130], [150, 150], [160, 170], [170, 180], [170, 180], [170, 180], [170, 180]],
+        [[100, 100], [130, 130], [150, 150], [160, 170], [180, 185], [180, 185], [180, 185]],
+        [[100, 100], [130, 130], [150, 150], [150, 150], [150, 150]],
+        [[100, 100], [130, 130], [150, 150], [160, 170], [180, 185], [190, 195]],
       ],
-      "Week 2 - Neurological Peak": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 100, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 100, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 130, reps: "3 reps", rest: "90 sec", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 130, reps: "3 reps", rest: "90 sec", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 3 (Outer)", weight: 150, reps: "1 rep", rest: "2 min", plates: [45, 25] },
-        { phase: "Warm-Up Set 3 (Inner)", weight: 150, reps: "1 rep", rest: "2 min", plates: [45, 25] },
-        { phase: "Warm-Up Set 4 (Outer)", weight: 160, reps: "1 rep", rest: "3 min", plates: [45, 25, 5] },
-        { phase: "Warm-Up Set 4 (Inner)", weight: 170, reps: "1 rep", rest: "3 min", plates: [45, 25, 10] },
-        { phase: "Working Set 1 (Outer)", weight: 180, reps: "2 reps", rest: "3 min", plates: [45, 25, 10, 5] },
-        { phase: "Working Set 1 (Inner)", weight: 185, reps: "2 reps", rest: "3 min", plates: [45, 25, 10, 5, 2.5] },
-        { phase: "Working Set 2 (Outer)", weight: 180, reps: "2 reps", rest: "3 min", plates: [45, 25, 10, 5] },
-        { phase: "Working Set 2 (Inner)", weight: 185, reps: "2 reps", rest: "3 min", plates: [45, 25, 10, 5, 2.5] },
-        { phase: "Working Set 3 (Outer)", weight: 180, reps: "2 reps", rest: "3 min", plates: [45, 25, 10, 5] },
-        { phase: "Working Set 3 (Inner)", weight: 185, reps: "2 reps", rest: "—", plates: [45, 25, 10, 5, 2.5] },
-      ],
-      "Week 3 - De-load": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 100, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 100, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 130, reps: "3 reps", rest: "90 sec", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 130, reps: "3 reps", rest: "90 sec", plates: [45, 10, 5] },
-        { phase: "Working Set 1 (Outer)", weight: 150, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 25] },
-        { phase: "Working Set 1 (Inner)", weight: 150, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 25] },
-        { phase: "Working Set 2 (Outer)", weight: 150, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 25] },
-        { phase: "Working Set 2 (Inner)", weight: 150, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 25] },
-        { phase: "Working Set 3 (Outer)", weight: 150, reps: "3 reps (Slow)", rest: "2 min", plates: [45, 25] },
-        { phase: "Working Set 3 (Inner)", weight: 150, reps: "3 reps (Slow)", rest: "—", plates: [45, 25] },
-      ],
-      "Week 4 - Max Effort Test": [
-        { phase: "Warm-Up Set 1 (Outer)", weight: 100, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 1 (Inner)", weight: 100, reps: "5 reps", rest: "60 sec", plates: [45] },
-        { phase: "Warm-Up Set 2 (Outer)", weight: 130, reps: "3 reps", rest: "90 sec", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 2 (Inner)", weight: 130, reps: "3 reps", rest: "90 sec", plates: [45, 10, 5] },
-        { phase: "Warm-Up Set 3 (Outer)", weight: 150, reps: "1 rep", rest: "2 min", plates: [45, 25] },
-        { phase: "Warm-Up Set 3 (Inner)", weight: 150, reps: "1 rep", rest: "2 min", plates: [45, 25] },
-        { phase: "Warm-Up Set 4 (Outer)", weight: 160, reps: "1 rep", rest: "3 min", plates: [45, 25, 5] },
-        { phase: "Warm-Up Set 4 (Inner)", weight: 170, reps: "1 rep", rest: "3 min", plates: [45, 25, 10] },
-        { phase: "Warm-Up Set 5 (Outer)", weight: 180, reps: "1 rep", rest: "3 min", plates: [45, 25, 10, 5] },
-        { phase: "Warm-Up Set 5 (Inner)", weight: 185, reps: "1 rep", rest: "3 min", plates: [45, 25, 10, 5, 2.5] },
-        { phase: "Max Attempt (Outer)", weight: 190, reps: "1 rep (Max Effort)", rest: "3 min before retry", plates: [45, 45] },
-        { phase: "Max Attempt (Inner)", weight: 195, reps: "1 rep (Max Effort)", rest: "—", plates: [45, 45, 2.5] },
-      ],
+      capRest: true,
     },
   };
+  const EXERCISE_PLANS = Object.fromEntries(
+    Object.entries(PLAN_WEIGHTS).map(([name, spec]) => [name, buildPlan(name, spec)])
+  );
 
   // Pin-loaded stack machines have no plates to show -- render the weight as a
   // pin setting instead of "Bar only", which implies an actual barbell. Every
@@ -2444,20 +1759,6 @@
     return !isFreeEntryMode() && weekSelect.value === FREESTYLE_WEEK;
   }
 
-  // Plate-loaded coded machines and what the empty bar or sled weighs (from the
-  // coded plans, confirmed by Chris). Freestyle on these shows the same
-  // tap-to-add plate picker as Week 0, adding 2 x one side to this weight.
-  const FREESTYLE_PLATE_MACHINES = {
-    "Incline Bench Press BM Smith Machine": { empty: 23, part: "bar" },
-    "Squat (Body Masters PS300)": { empty: 62, part: "sled" },
-    "BODY MASTERS LE 411 - 45° Super Seated Leg Press": { empty: 30, part: "sled" },
-    "Preacher Curls - Olympic EZ bar": { empty: 25, part: "bar" },
-    "Precor - Chest Press": { empty: 12, part: "carriage" },
-    "Precor - Incline Press": { empty: 12, part: "carriage" },
-    "Precor - Lat Pulldown": { empty: 5, part: "carriage" },
-    "Precor - Low Row": { empty: 15, part: "carriage" },
-    "Precor - Seated Row": { empty: 10, part: "carriage" },
-  };
   const freestyleLoadNote = document.getElementById("freestyle-load-note");
   const freestylePlatesSlot = document.getElementById("freestyle-plates-slot");
   let freestylePlatesOn = false;
