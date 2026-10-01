@@ -832,6 +832,48 @@
   window.addEventListener("unhandledrejection", (e) => showFatal((e.reason && e.reason.message) || String(e.reason || "unknown error")));
 
   const WORKER_URL = "https://workout-log-api.chrisflure.workers.dev";
+
+  // Every Worker call carries the app key, saved in this browser after it is
+  // entered once. A missing or rejected key asks again; calls made at the same
+  // moment share one prompt.
+  const APP_KEY_STORE = "workout-app-key";
+  let appKey = "";
+  try {
+    appKey = localStorage.getItem(APP_KEY_STORE) || "";
+  } catch (e) {
+    // storage blocked (private mode): the key lives in memory for this visit
+  }
+  let keyPrompt = null;
+  function askForKey() {
+    if (!keyPrompt) {
+      keyPrompt = new Promise((resolve) => {
+        appKey = (window.prompt("Enter the Workout Log app key. It is saved on this device.") || "").trim();
+        try {
+          if (appKey) localStorage.setItem(APP_KEY_STORE, appKey);
+          else localStorage.removeItem(APP_KEY_STORE);
+        } catch (e) {
+          // keep it in memory only
+        }
+        resolve(appKey);
+        setTimeout(() => (keyPrompt = null), 0);
+      });
+    }
+    return keyPrompt;
+  }
+  async function api(path, init = {}) {
+    const send = (key) => fetch(`${WORKER_URL}${path}`, { ...init, headers: { ...init.headers, "X-App-Key": key } });
+    let res = await send(appKey);
+    if (res.status === 401) {
+      const key = await askForKey();
+      if (key) res = await send(key);
+    }
+    return res;
+  }
+
+  // Text from Notion goes into the page as text, never as markup.
+  function esc(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  }
   // The PDF logo banner, loaded the first time a report is built (not on every page load).
   let reportHeader = null;
   function loadReportHeader() {
@@ -1926,7 +1968,7 @@
     const exercise = exerciseSelect.value;
     let rows;
     try {
-      const res = await fetch(`${WORKER_URL}/history?exercise=${encodeURIComponent(exercise)}`);
+      const res = await api(`/history?exercise=${encodeURIComponent(exercise)}`);
       if (!res.ok) return;
       rows = (await res.json()).rows || [];
     } catch (e) {
@@ -2305,7 +2347,7 @@
 
   async function loadToday() {
     try {
-      const res = await fetch(`${WORKER_URL}/today?date=${encodeURIComponent(dateInput.value)}`);
+      const res = await api(`/today?date=${encodeURIComponent(dateInput.value)}`);
       if (!res.ok) return;
       const data = await res.json();
       const fetched = data.rows || [];
@@ -2327,7 +2369,7 @@
       todayBody.innerHTML = "";
       for (const row of lastTodayRows) {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${row.exercise ?? ""}</td><td>${row.phase ?? ""}</td><td>${row.actualWeight ?? ""} lbs</td><td>${row.reps ?? ""}</td>`;
+        tr.innerHTML = `<td>${esc(row.exercise)}</td><td>${esc(row.phase)}</td><td>${esc(row.actualWeight)} lbs</td><td>${esc(row.reps)}</td>`;
         todayBody.appendChild(tr);
       }
       refreshWarmupPhases();
@@ -2503,7 +2545,7 @@
     try {
       const doc = await buildReportDoc(dateISO, rows);
       const pdfBase64 = doc.output("datauristring").split(",")[1];
-      const res = await fetch(`${WORKER_URL}/email-report`, {
+      const res = await api("/email-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2605,7 +2647,7 @@
       day: "numeric",
     });
     const rows = g.rows
-      .map((r) => `<tr><td>${r.exercise ?? ""}</td><td>${r.phase ?? ""}</td><td>${r.actualWeight ?? ""} lbs</td><td>${r.reps ?? ""}</td></tr>`)
+      .map((r) => `<tr><td>${esc(r.exercise)}</td><td>${esc(r.phase)}</td><td>${esc(r.actualWeight)} lbs</td><td>${esc(r.reps)}</td></tr>`)
       .join("");
     // One body icon per category trained that day, in first-logged order.
     const dayCategories = [...new Set(g.rows.map((r) => EXERCISE_CATEGORIES[r.exercise]).filter(Boolean))];
@@ -2762,7 +2804,7 @@
         const dots = present
           .map(
             (p) =>
-              `<circle cx="${xFor(p.i).toFixed(1)}" cy="${yFor(p.weight).toFixed(1)}" r="5" fill="${s.color}" stroke="#211b16" stroke-width="2"><title>${s.label} — ${p.date}: ${p.weight} lbs</title></circle>`
+              `<circle cx="${xFor(p.i).toFixed(1)}" cy="${yFor(p.weight).toFixed(1)}" r="5" fill="${s.color}" stroke="#211b16" stroke-width="2"><title>${esc(s.label)} — ${esc(p.date)}: ${esc(p.weight)} lbs</title></circle>`
           )
           .join("");
         const lastPresent = present[present.length - 1];
@@ -2776,7 +2818,7 @@
       .join("");
 
     const ariaLabel = series
-      .map((s) => `${s.label} ending at ${s.points.length ? s.points[s.points.length - 1].weight : "—"} lbs`)
+      .map((s) => `${esc(s.label)} ending at ${esc(s.points.length ? s.points[s.points.length - 1].weight : "—")} lbs`)
       .join("; ");
 
     return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Weight progression — ${ariaLabel}">${gridW}${seriesSVG}${xLabels}</svg>`;
@@ -2846,7 +2888,7 @@
         const gripKeys = Object.keys(grips);
         if (gripKeys.length === 1 && gripKeys[0] === "_single") {
           const series = [{ label: ex, color: "#ffcf7a", points: datePointsFrom(grips._single) }];
-          return `<div class="progression-card"><h3>${ex} — ${cfg.title}</h3>${buildLineChartSVG(series)}</div>`;
+          return `<div class="progression-card"><h3>${esc(ex)} — ${cfg.title}</h3>${buildLineChartSVG(series)}</div>`;
         }
         const series = gripKeys.map((k) => ({
           label: k === "_single" ? "Week 0 (no grip)" : `${k} Grip`,
@@ -2854,16 +2896,16 @@
           points: datePointsFrom(grips[k]),
         }));
         const legend = `<div class="chart-legend">${series
-          .map((s) => `<span class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span>${s.label}</span>`)
+          .map((s) => `<span class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span>${esc(s.label)}</span>`)
           .join("")}</div>`;
-        return `<div class="progression-card"><h3>${ex} — ${cfg.title}</h3>${legend}${buildLineChartSVG(series)}</div>`;
+        return `<div class="progression-card"><h3>${esc(ex)} — ${cfg.title}</h3>${legend}${buildLineChartSVG(series)}</div>`;
       })
       .join("");
   }
 
   async function fetchRangeGroups(start, end) {
-    const res = await fetch(`${WORKER_URL}/range?start=${start}&end=${end}`);
-    if (!res.ok) throw new Error("bad response");
+    const res = await api(`/range?start=${start}&end=${end}`);
+    if (!res.ok) throw new Error(res.status === 401 ? "key" : "bad response");
     const data = await res.json();
     return groupByDate(data.rows || []);
   }
@@ -2873,7 +2915,10 @@
     try {
       renderer(container, await fetchRangeGroups(start, end));
     } catch (e) {
-      container.innerHTML = '<p class="empty-note">Couldn\'t load — check your connection.</p>';
+      container.innerHTML =
+        e.message === "key"
+          ? '<p class="empty-note">Needs the app key.</p>'
+          : '<p class="empty-note">Couldn\'t load — check your connection.</p>';
     }
   }
   // Switching the view re-draws from the data already loaded, no refetch.
@@ -3019,7 +3064,7 @@
           body: JSON.stringify(payload),
         };
       }
-      const res = await fetch(`${WORKER_URL}/log`, requestInit);
+      const res = await api("/log", requestInit);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to save");
 

@@ -1,11 +1,35 @@
 const NOTION_VERSION = "2022-06-28";
 
-function cors() {
+// Browsers may only call the Worker from the live site or a local preview
+// (127.0.0.1 / localhost servers, or a file:// page, which sends Origin "null").
+// This is a second layer; the app key below is what actually locks it.
+function isAllowedOrigin(origin) {
+  return (
+    origin === "https://chrisflure-cmdch.github.io" ||
+    origin === "null" ||
+    /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin)
+  );
+}
+
+function cors(request) {
+  const origin = request.headers.get("Origin") || "";
   return {
-    "Access-Control-Allow-Origin": "*",
+    ...(isAllowedOrigin(origin) ? { "Access-Control-Allow-Origin": origin } : {}),
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-App-Key",
+    Vary: "Origin",
   };
+}
+
+// Every endpoint needs the X-App-Key header to match the APP_KEY secret
+// (set with `wrangler secret put APP_KEY`, never in code). Until that secret
+// exists, requests pass, so the Worker and page can roll out first.
+async function hasAppKey(request, env) {
+  if (!env.APP_KEY) return true;
+  const enc = new TextEncoder();
+  const given = enc.encode(request.headers.get("X-App-Key") || "");
+  const expected = enc.encode(env.APP_KEY);
+  return given.byteLength === expected.byteLength && crypto.subtle.timingSafeEqual(given, expected);
 }
 
 function json(data, status, headers) {
@@ -390,10 +414,13 @@ async function handleHistory(request, env, headers) {
 
 export default {
   async fetch(request, env) {
-    const headers = cors();
+    const headers = cors(request);
 
     if (request.method === "OPTIONS") {
       return new Response(null, { headers });
+    }
+    if (!(await hasAppKey(request, env))) {
+      return json({ error: "Wrong or missing app key" }, 401, headers);
     }
 
     const url = new URL(request.url);
