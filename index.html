@@ -918,8 +918,8 @@
   //   Week 3: Warm-Up 1-2, Working 1-3     Week 4: Warm-Up 1-4 (or 1-5), Max Attempt
   // A two-grip machine gives [Outer, Inner] pairs instead of single weights, and
   // gets "(Outer)"/"(Inner)" rows interleaved at every rung. Reps and rests come
-  // from the template. Options: capRest (Chris's 3-minute rest cap, used on the
-  // Precor machines) and maxRest (a different rest after the Max Attempt).
+  // from the template. capRest applies Chris's 3-minute rest cap (used on the
+  // Precor machines).
   // Plates per side are worked out from FREESTYLE_PLATE_MACHINES' empty weight;
   // anything not listed there is pin-loaded and shows no plates.
   const WARM_UPS = [
@@ -947,7 +947,7 @@
     }
     return plates;
   }
-  function buildPlan(name, { weeks, capRest = false, maxRest = "5 min before retry" }) {
+  function buildPlan(name, { weeks, capRest = false }) {
     const machine = FREESTYLE_PLATE_MACHINES[name];
     const plates = (weight) => (machine ? platesPerSide((weight - machine.empty) / 2) : []);
     const plan = {};
@@ -957,7 +957,7 @@
         const isMax = !working && n === weights.length - 1;
         const isWarmUp = working ? n < warmUps : !isMax;
         const phase = isMax ? "Max Attempt" : isWarmUp ? `Warm-Up Set ${n + 1}` : `Working Set ${n - warmUps + 1}`;
-        const { reps, rest } = isMax ? { reps: "1 rep (Max Effort)", rest: maxRest } : isWarmUp ? WARM_UPS[n] : working;
+        const { reps, rest } = isMax ? { reps: "1 rep (Max Effort)", rest: "5 min before retry" } : isWarmUp ? WARM_UPS[n] : working;
         const rows = Array.isArray(w) ? [[" (Outer)", w[0]], [" (Inner)", w[1]]] : [["", w]];
         return rows.map(([grip, weight]) => ({
           phase: phase + grip,
@@ -1049,8 +1049,8 @@
         [[50, 65], [80, 95], [95, 110], [105, 120], [115, 130]],
       ],
     },
-    // DRAFT added 2026-09-28 from Week 0 calibration on 2026-09-28 (Set 1,3,5,7:
-    // 55x10, 70x10, 75x6, 75x6). Not yet confirmed with Chris -- preview only.
+    // Added 2026-09-28 from Week 0 calibration on 2026-09-28 (Set 1,3,5,7:
+    // 55x10, 70x10, 75x6, 75x6). Confirmed by Chris 2026-09-30 as drafted.
     "Precor Icarian - Biceps Curl (Bottom Pulley)": {
       weeks: [
         [40, 55, 65, 70, 70, 70, 70, 70],
@@ -1058,10 +1058,9 @@
         [40, 55, 65, 65, 65],
         [40, 55, 65, 70, 75, 80],
       ],
-      maxRest: "—",
     },
-    // DRAFT added 2026-09-28 from Week 0 calibration on 2026-09-28 (Set 2,4,6,8:
-    // 55x10, 60x10, 75x6, 70x6). Not yet confirmed with Chris -- preview only.
+    // Added 2026-09-28 from Week 0 calibration on 2026-09-28 (Set 2,4,6,8:
+    // 55x10, 60x10, 75x6, 70x6). Confirmed by Chris 2026-09-30 as drafted.
     "Precor Icarian - Triceps Pushdown (Top Pulley)": {
       weeks: [
         [40, 55, 65, 70, 70, 70, 70, 70],
@@ -1069,7 +1068,6 @@
         [40, 55, 65, 65, 65],
         [40, 55, 65, 70, 75, 80],
       ],
-      maxRest: "—",
     },
     // BODY MASTERS CM 282 - Lateral Raise added 2026-09-13 (base 30 lbs,
     // 70 lb max). Single grip -- elbow/forearm roller pads, not hand grips,
