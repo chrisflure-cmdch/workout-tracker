@@ -1295,6 +1295,21 @@
       ],
       capRest: true,
     },
+    // Precor - Adductor 620 added 2026-10-03. Pin-loaded stack, fully
+    // decal-labeled in clean 10 lb steps (no guessing). Single grip --
+    // seated, inside of legs against pads, no hand-position choice. Week 0
+    // was a feel-out ramp, not a true max test (80x15, 80x15, 90x10,
+    // 100x5, 110x3, never to failure), so the Week 4 max is a conservative
+    // one-rung step above the heaviest weight tested.
+    "Precor - Adductor 620": {
+      weeks: [
+        [60, 70, 80, 90, 100, 100, 100, 100],
+        [60, 70, 80, 90, 110, 110, 110],
+        [60, 70, 90, 90, 90],
+        [60, 70, 80, 90, 110, 120],
+      ],
+      capRest: true,
+    },
   };
   const EXERCISE_PLANS = Object.fromEntries(
     Object.entries(PLAN_WEIGHTS).map(([name, spec]) => [name, buildPlan(name, spec)])
@@ -1329,6 +1344,7 @@
     "Hoist ROC-IT - Leg Extension": "Legs",
     "High Tech - Standing Calf Raise": "Legs",
     "Eagle by Cybex - Leg Press": "Legs",
+    "Precor - Adductor 620": "Legs",
     "Hoist ROC-IT - Biceps Curl": "Shoulders/Bi's & Tri's",
     "Body Masters - CM 226 - Tricep Press": "Shoulders/Bi's & Tri's",
     "Icarian -Tricep Ext. 208": "Shoulders/Bi's & Tri's",
@@ -1448,6 +1464,10 @@
     ],
     "High Tech - Standing Calf Raise": [
       { src: "machines/calf-raise-1.jpg", caption: "High Tech standing calf raise and its weight stack." },
+    ],
+    "Precor - Adductor 620": [
+      { src: "machines/precor-adductor-620-1.jpg", caption: "Instructions plate: Precor Adductor 620." },
+      { src: "machines/precor-adductor-620-2.jpg", caption: "Weight stack, numbers in pounds and kilograms." },
     ],
     "Eagle by Cybex - Leg Press": [
       { src: "machines/eagle-by-cybex-leg-press-2.jpg", caption: "Instructions plate, Eagle leg press, tag E12." },
@@ -1740,6 +1760,7 @@
     "Hoist ROC-IT - Leg Extension": "Quads/Glutes",
     "Hoist ROC-IT - Leg Curl": "Hamstrings",
     "High Tech - Standing Calf Raise": "Calves",
+    "Precor - Adductor 620": "Adductors",
   };
   const warmupNote = document.getElementById("warmup-note");
   const warmupNoteText = document.getElementById("warmup-note-text");
@@ -2433,6 +2454,7 @@
     "Hoist ROC-IT - Leg Curl": "Hamstrings, calves.",
     "Hoist ROC-IT - Leg Extension": "Quads.",
     "High Tech - Standing Calf Raise": "Calves.",
+    "Precor - Adductor 620": "Inner thigh (adductors).",
     "Eagle by Cybex - Leg Press": "Quads, glutes, hamstrings.",
     "Hoist ROC-IT - Biceps Curl": "Biceps, forearms.",
     "Body Masters - CM 226 - Tricep Press": "Triceps, front shoulders.",
