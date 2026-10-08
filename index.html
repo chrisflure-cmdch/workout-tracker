@@ -975,11 +975,14 @@
     return plan;
   }
   const PLAN_WEIGHTS = {
+    // 2026-10-07: Week 4 Max Attempt (2026-10-05) was a 133 single, done as the
+    // fourth max lift of the day. Working weeks came down under that tested
+    // number (123, then 133); the 143 max target is held for a fresh rematch.
     "Incline Bench Press BM Smith Machine": {
       weeks: [
-        [23, 73, 113, 133, 143, 143, 143, 143],
-        [23, 73, 113, 133, 153, 153, 153],
-        [23, 73, 113, 113, 113],
+        [23, 73, 103, 113, 123, 123, 123, 123],
+        [23, 73, 113, 123, 133, 133, 133],
+        [23, 73, 103, 103, 103],
         [23, 73, 113, 133, 143],
       ],
     },
@@ -998,43 +1001,56 @@
     },
     // Body Masters 310 Chest Press - Vertical added 2026-09-08 for the pin-loaded
     // stack (base 130 lbs), ramping to a 220 lb max-effort target.
+    // 2026-10-07: Week 4 (2026-10-05) was 210 x 1 barely, then 200 x 2; 220 was
+    // too much per Chris. Ramp pulled back one notch: working 190 then 200,
+    // max target 210.
     "Body Masters 310 Chest Press - Vertical": {
       weeks: [
-        [130, 150, 170, 190, 200, 200, 200, 200],
-        [130, 150, 170, 190, 210, 210, 210],
+        [130, 150, 170, 180, 190, 190, 190, 190],
+        [130, 150, 170, 190, 200, 200, 200],
         [130, 150, 170, 170, 170],
-        [130, 150, 170, 190, 210, 220],
+        [130, 150, 170, 190, 200, 210],
       ],
     },
     // Precor - Vertical Row 309 added 2026-09-08 for the pin-loaded stack
     // (base 70 lbs), ramping to a 120 lb max-effort target.
+    // 2026-10-07: Week 4 Max Attempt (2026-10-05) hit 120 x 2. Max target steps
+    // to 130. The stack has no 115 setting (Chris), so the 105 and 115 rungs
+    // are gone and every weight sits on a 10 lb step.
     "Precor - Vertical Row 309": {
       weeks: [
-        [70, 80, 90, 100, 105, 105, 105, 105],
-        [70, 80, 90, 100, 110, 110, 110],
+        [70, 80, 90, 100, 110, 110, 110, 110],
+        [70, 80, 90, 100, 110, 120, 120],
         [70, 80, 90, 90, 90],
-        [70, 80, 90, 100, 115, 120],
+        [70, 80, 90, 110, 120, 130],
       ],
     },
     // BODY MASTERS CM 240 - Lat Pull-down added 2026-09-08 for the pin-loaded
     // stack (base 80 lbs), ramping to a 150 lb max-effort target.
+    // 2026-10-07: Week 4 Max Attempt (2026-10-05) hit 140 x 3, "not too bad".
+    // Max target steps to 150. The stack has no 95 setting (Chris), so the
+    // ramp is rebuilt on 10 lb steps -- assumed from that note, not yet
+    // checked against a stack photo.
     "BODY MASTERS CM 240 - Lat Pull-down": {
       weeks: [
-        [80, 95, 110, 125, 135, 135, 135, 135],
-        [80, 95, 110, 110, 130, 130, 130],
-        [80, 95, 110, 110, 110],
-        [80, 95, 110, 110, 130, 140],
+        [80, 90, 110, 120, 130, 130, 130, 130],
+        [80, 90, 110, 120, 140, 140, 140],
+        [80, 90, 110, 110, 110],
+        [80, 90, 110, 130, 140, 150],
       ],
     },
     // Nautilus Nitro - Vertical Chest added 2026-09-08 (base 110 lbs, 190 lb
     // max). Updated 2026-09-13 with an Outer-grip track (base 100, max 165),
     // interleaved Outer-then-Inner same as the Overhead Press machine.
+    // 2026-10-07: Week 4 Max Attempts (2026-10-05) went 10 lb over target on
+    // both grips -- Outer 160, Inner 175, both felt good. Those are now
+    // Warm-Up 5; max targets step to 170 / 185.
     "Nautilus Nitro - Vertical Chest": {
       weeks: [
-        [[100, 110], [120, 130], [135, 150], [145, 165], [150, 175], [150, 175], [150, 175], [150, 175]],
-        [[100, 110], [120, 130], [135, 150], [140, 155], [145, 160], [145, 160], [145, 160]],
+        [[100, 110], [120, 130], [135, 150], [140, 155], [150, 165], [150, 165], [150, 165], [150, 165]],
+        [[100, 110], [120, 130], [135, 150], [140, 155], [155, 170], [155, 170], [155, 170]],
         [[100, 110], [120, 130], [135, 150], [135, 150], [135, 150]],
-        [[100, 110], [120, 130], [135, 150], [140, 155], [145, 160], [150, 165]],
+        [[100, 110], [120, 130], [140, 155], [150, 165], [160, 175], [170, 185]],
       ],
     },
     // Nautilus Nitro - Overhead Press added 2026-09-13. One machine, one
@@ -1042,12 +1058,16 @@
     // every rung alternates Outer then Inner at the same rep/rest step; he
     // just moves the pin between the two calls. Kept as one exercise (one
     // week-completion cycle) rather than two, per his request.
+    // 2026-10-07: Week 4 Max Attempts (2026-10-04) were clean -- Outer 115 with
+    // reps left, Inner 130 with about 4 left. Max targets step to 125 / 145,
+    // and Weeks 1-3 are rebuilt under the tested numbers (they still carried
+    // the old 140 / 155 working weights).
     "Nautilus Nitro - Overhead Press": {
       weeks: [
-        [[50, 65], [80, 95], [110, 125], [125, 140], [140, 155], [140, 155], [140, 155], [140, 155]],
-        [[50, 65], [80, 95], [110, 125], [125, 140], [125, 140], [125, 140], [125, 140]],
-        [[50, 65], [80, 95], [110, 125], [110, 125], [110, 125]],
-        [[50, 65], [80, 95], [95, 110], [105, 120], [115, 130]],
+        [[50, 65], [80, 95], [95, 110], [105, 120], [110, 125], [110, 125], [110, 125], [110, 125]],
+        [[50, 65], [80, 95], [95, 110], [105, 120], [115, 130], [115, 130], [115, 130]],
+        [[50, 65], [80, 95], [95, 110], [95, 110], [95, 110]],
+        [[50, 65], [80, 95], [95, 110], [105, 120], [115, 130], [125, 145]],
       ],
     },
     // Added 2026-09-28 from Week 0 calibration on 2026-09-28 (Set 1,3,5,7:
@@ -1072,16 +1092,16 @@
     },
     // BODY MASTERS CM 282 - Lateral Raise added 2026-09-13 (base 30 lbs,
     // 70 lb max). Single grip -- elbow/forearm roller pads, not hand grips,
-    // confirmed with Chris. Machine only moves in 10 lb steps with a 40 lb
-    // total range, too tight for the usual full-size ramp, so per Chris's
-    // choice the warm-up ramp is compressed (Warm-Up 3/4 share 50 lbs) to
-    // keep Working Sets (60) and the Max Attempt (70) as distinct weights.
+    // confirmed with Chris. Machine moves in 10 lb steps.
+    // 2026-10-07: Week 4 Max Attempt (2026-10-04) hit 70 x 3 with more in the
+    // tank. Whole ramp up 10 lb, max target 80. The stack itself runs 10 to
+    // 140 lb in 10 lb steps (machines/lateral-raise-2.jpg).
     "BODY MASTERS CM 282 - Lateral Raise": {
       weeks: [
-        [30, 40, 50, 50, 60, 60, 60, 60],
-        [30, 40, 50, 50, 60, 60, 60],
-        [30, 40, 50, 50, 50],
-        [30, 40, 50, 50, 60, 70],
+        [30, 40, 50, 60, 70, 70, 70, 70],
+        [30, 40, 50, 60, 70, 70, 70],
+        [30, 40, 60, 60, 60],
+        [30, 40, 50, 60, 70, 80],
       ],
     },
     // BODY MASTERS LE 411 - 45° Super Seated Leg Press added 2026-09-13.
@@ -1192,12 +1212,15 @@
     // 77/85, real ascending-within-week working pattern like the recent Leg
     // machines. Single grip, confirmed by Chris. Week 4 top rungs (88, 93)
     // are projected off the real chart (Pin 9/10), not yet confirmed.
+    // 2026-10-07: Week 4 Max Attempt (2026-10-04) hit 93 x 1, tough, after a
+    // 70 -> 88 jump Chris called too big. Max held at 93; the Week 4 ramp now
+    // climbs one chart rung at a time.
     "Hoist ROC-IT - Biceps Curl": {
       weeks: [
         [45, 54, 62, 70, 77, 85, 85, 85],
         [45, 54, 62, 70, 77, 85, 85],
         [45, 54, 62, 62, 62],
-        [45, 54, 62, 70, 88, 93],
+        [54, 62, 70, 77, 85, 93],
       ],
     },
     // Body Masters - CM 226 - Tricep Press added 2026-09-14, built directly
@@ -1207,12 +1230,15 @@
     // landed on a real notch. Single grip (fixed cable bar, 5 lb max per
     // the decal, negligible). Week 4 top rungs (80, 90) are projected off
     // the visible stack notches, not yet confirmed.
+    // 2026-10-07: Week 4 (2026-10-04) topped out at 70 x 2; 90 was too much and
+    // 80 was too big a jump from 50 (Chris). Max target comes down to 80,
+    // reached in 10 lb steps.
     "Body Masters - CM 226 - Tricep Press": {
       weeks: [
         [30, 40, 50, 50, 60, 70, 70, 70],
         [30, 40, 50, 50, 60, 70, 70],
         [30, 40, 50, 50, 50],
-        [30, 40, 50, 50, 80, 90],
+        [30, 40, 50, 60, 70, 80],
       ],
     },
     // Icarian -Tricep Ext. 208 added 2026-09-14, built directly off Chris's
@@ -1222,12 +1248,15 @@
     // recent machines, working sets held flat at one real weight (80) all
     // the way through -- no ascending step this session. Week 4 top rungs
     // (90, 100) are projected off the visible stack notches, unconfirmed.
+    // 2026-10-07: Week 4 (2026-10-04) topped out at 90 x 1; 100 was too much
+    // after a 70 -> 90 jump (Chris). Max held at 100 for a rematch, reached
+    // in 10 lb steps.
     "Icarian -Tricep Ext. 208": {
       weeks: [
         [50, 60, 70, 70, 80, 80, 80, 80],
         [50, 60, 70, 70, 80, 80, 80],
         [50, 60, 70, 70, 70],
-        [50, 60, 70, 70, 90, 100],
+        [50, 60, 70, 80, 90, 100],
       ],
     },
     // Preacher Curls - Olympic EZ bar added 2026-09-14. Plate-loaded, bar
@@ -1238,10 +1267,13 @@
     // explored 3 distinct loadings (35/45/55), holding 55 flat through all
     // working sets -- warm-ups compressed to match (WU1/2 both 35). Week 4
     // top rungs (65, 75) are projected, unconfirmed.
+    // 2026-10-07: Week 4 Max Attempt (2026-10-04) made 70 (10+10+2.5 a side),
+    // barely, and could not do 75. Max held at 75 for a rematch; Week 2
+    // working sets step from 55 to 60.
     "Preacher Curls - Olympic EZ bar": {
       weeks: [
         [35, 35, 45, 55, 55, 55, 55, 55],
-        [35, 35, 45, 55, 55, 55, 55],
+        [35, 35, 45, 55, 60, 60, 60],
         [35, 35, 45, 45, 45],
         [35, 35, 45, 55, 65, 75],
       ],
