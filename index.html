@@ -439,6 +439,8 @@
     font-weight: 600;
   }
   #exercise-reference a { display: inline-block; margin-right: 16px; color: var(--glow); }
+  #exercise-setup { margin: 0; }
+  #exercise-setup strong { color: var(--glow); }
   .machine-photo-btn {
     display: flex;
     align-items: center;
@@ -622,6 +624,8 @@
   </label>
 
   <div id="exercise-reference" hidden></div>
+
+  <p id="exercise-setup" hidden><strong>Setup:</strong> <span></span></p>
 
   <button type="button" id="exercise-photo" class="machine-photo-btn" hidden>
     <img id="exercise-photo-thumb" alt="">
@@ -1425,6 +1429,13 @@
   // dropdown, hidden for anything not listed here. A value is one URL, or a
   // list of { label, url } for several videos; the label shows in brackets
   // ("Exercise Video (Beginner)").
+  // Machine settings Chris wants in front of him before the first set (seat
+  // position, handle or bar height). Free text, shown as "Setup: ..." under
+  // the exercise. An exercise with no entry shows nothing.
+  const EXERCISE_SETUP = {
+    "Precor - Incline Press 402": "Seat 2",
+  };
+
   const EXERCISE_REFERENCE_LINKS = {
     "Dumbbell Ab Flutter Kick": "https://www.youtube.com/watch?v=3SUtOSaOn1M&t=178s",
     "Dumbbell High Ab Crunch": "https://www.youtube.com/watch?v=3SUtOSaOn1M&t=50s",
@@ -1658,6 +1669,7 @@
   const categorySelect = document.getElementById("category");
   const exerciseSelect = document.getElementById("exercise");
   const exerciseReference = document.getElementById("exercise-reference");
+  const exerciseSetup = document.getElementById("exercise-setup");
   const standardFields = document.getElementById("standard-fields");
   const customFields = document.getElementById("custom-fields");
   const customExercise = document.getElementById("custom-exercise");
@@ -2355,6 +2367,10 @@
       link.textContent = `Exercise Video${video.label ? ` (${video.label})` : ""} ↗`;
       return link;
     }));
+
+    const setup = EXERCISE_SETUP[exerciseSelect.value];
+    exerciseSetup.hidden = !setup;
+    exerciseSetup.querySelector("span").textContent = setup || "";
 
     const machinePhotos = EXERCISE_PHOTOS[exerciseSelect.value] || [];
     const machinePhoto = machinePhotos[0];
