@@ -702,6 +702,7 @@
           </div>
           <div class="photo-thumbs" id="photo-thumbs"></div>
         </div>
+        <div id="photo-reading" style="font-weight: 400; color: var(--text-dim);" hidden></div>
         <input type="file" id="machine-photo-camera" accept="image/*" capture="environment" hidden>
         <input type="file" id="machine-photos" accept="image/*" multiple hidden>
       </div>
@@ -2271,6 +2272,19 @@
   const machinePhotoInput = document.getElementById("machine-photos");
   const photoThumbs = document.getElementById("photo-thumbs");
   let machinePhotos = [];
+  // Reading a full-size phone shot takes a moment. Log set stays locked until
+  // every picked photo is read, so a quick tap can't save the set with only
+  // some of them (that lost two of three photos on 2026-10-10).
+  const photoReadingEl = document.getElementById("photo-reading");
+  let photosReading = 0;
+  let savingSet = false;
+  function syncSubmitLock() {
+    submitBtn.disabled = savingSet || photosReading > 0;
+    photoReadingEl.hidden = !photosReading;
+    photoReadingEl.textContent = photosReading
+      ? `Reading ${photosReading} photo${photosReading === 1 ? "" : "s"}... Log set unlocks when ready.`
+      : "";
+  }
   async function shrinkPhoto(file) {
     const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
     const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
@@ -2291,11 +2305,17 @@
       wrap.innerHTML = `<img src="${p.url}" alt="Weight system photo ${i + 1}"><button type="button" class="photo-remove" data-index="${i}" aria-label="Remove photo ${i + 1}">&times;</button>`;
       photoThumbs.appendChild(wrap);
     });
-    document.getElementById("photo-add").hidden = machinePhotos.length >= MAX_MACHINE_PHOTOS;
+    document.getElementById("photo-add").hidden = machinePhotos.length + photosReading >= MAX_MACHINE_PHOTOS;
   }
   function clearMachinePhotos() {
     machinePhotos.forEach((p) => URL.revokeObjectURL(p.url));
     machinePhotos = [];
+    renderPhotoThumbs();
+  }
+  // After a save, only the photos that went with it leave the list.
+  function removeMachinePhotos(sent) {
+    sent.forEach((p) => URL.revokeObjectURL(p.url));
+    machinePhotos = machinePhotos.filter((p) => !sent.includes(p));
     renderPhotoThumbs();
   }
   // "Take photo" opens the camera straight away (capture), "Choose photo" opens
@@ -2304,18 +2324,32 @@
   document.getElementById("photo-take").addEventListener("click", () => machineCameraInput.click());
   document.getElementById("photo-choose").addEventListener("click", () => machinePhotoInput.click());
   async function addMachinePhotos(input) {
-    const chosen = Array.from(input.files).slice(0, MAX_MACHINE_PHOTOS - machinePhotos.length);
+    const chosen = Array.from(input.files).slice(0, MAX_MACHINE_PHOTOS - machinePhotos.length - photosReading);
     input.value = "";
+    if (!chosen.length) return;
+    photosReading += chosen.length;
+    syncSubmitLock();
+    renderPhotoThumbs();
+    let failed = 0;
     for (const file of chosen) {
       try {
         const blob = await shrinkPhoto(file);
         machinePhotos.push({ blob, url: URL.createObjectURL(blob) });
       } catch (e) {
-        statusEl.className = "err";
-        statusEl.textContent = "Could not read that photo, try another.";
+        failed++;
       }
+      // Each photo shows as soon as it is ready.
+      photosReading--;
+      syncSubmitLock();
+      renderPhotoThumbs();
     }
-    renderPhotoThumbs();
+    if (failed) {
+      statusEl.className = "err";
+      statusEl.textContent =
+        chosen.length === 1
+          ? "Could not read that photo, try another."
+          : `Could not read ${failed} of ${chosen.length} photos, try them again.`;
+    }
   }
   machinePhotoInput.addEventListener("change", () => addMachinePhotos(machinePhotoInput));
   machineCameraInput.addEventListener("change", () => addMachinePhotos(machineCameraInput));
@@ -3148,7 +3182,9 @@
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    submitBtn.disabled = true;
+    if (photosReading) return; // Log set is locked until the photos are read
+    savingSet = true;
+    syncSubmitLock();
     statusEl.className = "";
     statusEl.textContent = "Saving...";
 
@@ -3236,11 +3272,12 @@
       if (photosToSend.length) {
         if (data.photosAttached === photosToSend.length) {
           statusEl.textContent = `Saved. ${data.photosAttached} photo${data.photosAttached === 1 ? "" : "s"} attached.`;
-          clearMachinePhotos();
+          removeMachinePhotos(photosToSend);
         } else {
           // The set is saved; keep the photos so they go with the next set.
           statusEl.className = "err";
-          statusEl.textContent = `Saved, but only ${data.photosAttached || 0} of ${photosToSend.length} photos attached. They will go with the next set.`;
+          const why = Array.isArray(data.photoErrors) && data.photoErrors.length ? ` ${data.photoErrors.join("; ")}.` : "";
+          statusEl.textContent = `Saved, but only ${data.photosAttached || 0} of ${photosToSend.length} photos attached.${why} They will go with the next set.`;
         }
       }
       repsInput.value = "";
@@ -3275,7 +3312,8 @@
           ? "Could not reach the server, so this set may not have saved. Check your signal, look at the Logged list, and tap Log set again if it is missing."
           : err.message || "Something went wrong.";
     } finally {
-      submitBtn.disabled = false;
+      savingSet = false;
+      syncSubmitLock();
     }
   });
 </script>

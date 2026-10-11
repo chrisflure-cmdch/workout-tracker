@@ -120,7 +120,9 @@ async function handleLog(request, env, headers) {
   // Machine photos are an extra too: the set is already saved, so a failed
   // upload only lowers `photosAttached`, it never turns the log into an error.
   const photosSent = Math.min(photos.length, MAX_PHOTOS);
-  const photosAttached = photosSent ? await attachPhotos(env, page.id, photos, `${date} ${exercise}`) : 0;
+  const { attached: photosAttached, errors: photoErrors } = photosSent
+    ? await attachPhotos(env, page.id, photos, `${date} ${exercise}`)
+    : { attached: 0, errors: [] };
 
   return json(
     {
@@ -131,6 +133,7 @@ async function handleLog(request, env, headers) {
       workoutLinked: linked && !!links.workoutId,
       photosSent,
       photosAttached,
+      photoErrors,
     },
     200,
     headers
@@ -141,7 +144,7 @@ const MAX_PHOTOS = 3;
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 
 async function uploadPhoto(env, file, filename) {
-  if (file.size > MAX_PHOTO_BYTES) throw new Error("photo too large");
+  if (file.size > MAX_PHOTO_BYTES) throw new Error("too large");
   const contentType = /^image\//.test(file.type) ? file.type : "image/jpeg";
 
   const create = await fetch("https://api.notion.com/v1/file_uploads", {
@@ -150,7 +153,7 @@ async function uploadPhoto(env, file, filename) {
     body: JSON.stringify({ filename, content_type: contentType }),
     signal: AbortSignal.timeout(8000),
   });
-  if (!create.ok) throw new Error(`file_uploads create ${create.status}`);
+  if (!create.ok) throw new Error(`Notion refused the upload (${create.status})`);
   const { id } = await create.json();
 
   const form = new FormData();
@@ -162,22 +165,30 @@ async function uploadPhoto(env, file, filename) {
     body: form,
     signal: AbortSignal.timeout(15000),
   });
-  if (!send.ok) throw new Error(`file_uploads send ${send.status}`);
+  if (!send.ok) throw new Error(`Notion refused the file (${send.status})`);
   return { id, filename };
 }
 
-// Returns how many photos ended up attached to the set's Photos property.
+// A timeout surfaces as a TimeoutError with a wordy message; say it plainly.
+function photoFailure(err) {
+  return err?.name === "TimeoutError" ? "timed out" : err?.message || "failed";
+}
+
+// Returns how many photos ended up attached to the set's Photos property, and
+// why each of the others did not make it, so the page can say so.
 async function attachPhotos(env, pageId, photos, label) {
   const slug = label.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "machine";
   const uploaded = [];
+  const errors = [];
   for (const [i, file] of photos.slice(0, MAX_PHOTOS).entries()) {
     try {
       uploaded.push(await uploadPhoto(env, file, `${slug}-${i + 1}.jpg`));
-    } catch {
-      // skip this photo
+    } catch (err) {
+      // skip this photo, keep the reason
+      errors.push(`Photo ${i + 1}: ${photoFailure(err)}`);
     }
   }
-  if (!uploaded.length) return 0;
+  if (!uploaded.length) return { attached: 0, errors };
 
   try {
     const res = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
@@ -192,9 +203,10 @@ async function attachPhotos(env, pageId, photos, label) {
       }),
       signal: AbortSignal.timeout(8000),
     });
-    return res.ok ? uploaded.length : 0;
-  } catch {
-    return 0;
+    if (res.ok) return { attached: uploaded.length, errors };
+    return { attached: 0, errors: [...errors, `Attaching to the set: Notion ${res.status}`] };
+  } catch (err) {
+    return { attached: 0, errors: [...errors, `Attaching to the set: ${photoFailure(err)}`] };
   }
 }
 
