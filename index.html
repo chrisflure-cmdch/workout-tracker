@@ -1371,6 +1371,23 @@
       ],
       capRest: true,
     },
+    // Precor - Pec Fly 505 added 2026-10-10. Pin-loaded, single grip (the
+    // decal reads "Pec Fly/Rear Delt 505", Icarian; Chris does the fly).
+    // Week 0 (2026-10-10): 60x6, 70x6, 80x6, 90x3, 100x3, 110x3, 120x3,
+    // 140x2. Above 120 the stack jumps 20 lb at a time (Chris's note: "Jumps
+    // 20 Lbs. From here to 160, Max is 280"; the stack photo shows 10 to 120
+    // in 10s, then 140 to 280 in 20s), so there is no 130 or 150. The
+    // 160 max is one jump above the heaviest weight tested and is a stretch
+    // (140x2 projects to about 149).
+    "Precor - Pec Fly 505": {
+      weeks: [
+        [60, 80, 100, 110, 120, 120, 120, 120],
+        [60, 80, 100, 120, 140, 140, 140],
+        [60, 80, 100, 100, 100],
+        [60, 80, 100, 120, 140, 160],
+      ],
+      capRest: true,
+    },
   };
   const EXERCISE_PLANS = Object.fromEntries(
     Object.entries(PLAN_WEIGHTS).map(([name, spec]) => [name, buildPlan(name, spec)])
@@ -1394,6 +1411,7 @@
     "Precor - Chest Press": "Chest and Back",
     "Precor - Incline Press": "Chest and Back",
     "Precor - Incline Press 402": "Chest and Back",
+    "Precor - Pec Fly 505": "Chest and Back",
     "Precor - Lat Pulldown": "Chest and Back",
     "Precor - Low Row": "Chest and Back",
     "Precor - Seated Row": "Chest and Back",
@@ -1469,6 +1487,11 @@
       { src: "machines/precor-incline-press-402-1.jpg", caption: "Instructions plate: Precor Incline Press 402." },
       { src: "machines/precor-incline-press-402-2.jpg", caption: "Precor Incline Press 402, seat, back pad and handles." },
       { src: "machines/precor-incline-press-402-3.jpg", caption: "Weight stack, 10 to 200 lb in 10 lb steps." },
+    ],
+    "Precor - Pec Fly 505": [
+      { src: "machines/precor-pec-fly-505-1.jpg", caption: "Instructions plate: Pec Fly/Rear Delt 505 (the plate itself reads Icarian)." },
+      { src: "machines/precor-pec-fly-505-2.jpg", caption: "Pec Fly 505, seat, back pad and lower handle." },
+      { src: "machines/precor-pec-fly-505-3.jpg", caption: "Weight stack: 10 lb steps to 120, then 20 lb steps to 280." },
     ],
     "Precor - Lat Pulldown": [
       { src: "machines/precor-lat-pulldown-1.jpg", caption: "Instructions plate: Precor Pulldown." },
@@ -1819,6 +1842,7 @@
     "Precor - Chest Press": "Chest",
     "Precor - Incline Press": "Chest",
     "Precor - Incline Press 402": "Chest",
+    "Precor - Pec Fly 505": "Chest",
     "Precor - Vertical Row 309": "Back",
     "BODY MASTERS CM 240 - Lat Pull-down": "Back",
     "Precor - Lat Pulldown": "Back",
@@ -2543,6 +2567,7 @@
     "Precor - Chest Press": "Chest, front shoulders, triceps.",
     "Precor - Incline Press": "Upper chest, front shoulders, triceps.",
     "Precor - Incline Press 402": "Upper chest, triceps.",
+    "Precor - Pec Fly 505": "Chest, front shoulders.",
     "Precor - Lat Pulldown": "Lats, upper back, biceps, rear shoulders.",
     "Precor - Low Row": "Lats, mid back, rear shoulders, biceps.",
     "Precor - Seated Row": "Mid back, lats, rear shoulders, biceps.",
