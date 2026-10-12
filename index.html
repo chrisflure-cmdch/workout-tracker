@@ -1389,6 +1389,22 @@
       ],
       capRest: true,
     },
+    // Precor - Abductor 621 added 2026-10-11. Pin-loaded, single grip, stack
+    // decal-labeled 10 to 150 lb in 10 lb steps. Chris logged it as "Adductor
+    // 621"; the decal reads Abductor (outside of legs against the pads, push
+    // outward). First session (2026-10-11): 60x12, 70x12, 80x12, 80x10,
+    // 90x10, 100x6, 100x10, 100x10, never to failure. Chris counts that
+    // session as Week 1, so Week 1 works at the 100 he did. 100x10 projects
+    // to about 133, so the Week 4 max is 130.
+    "Precor - Abductor 621": {
+      weeks: [
+        [60, 70, 80, 90, 100, 100, 100, 100],
+        [60, 70, 80, 90, 110, 110, 110],
+        [60, 70, 90, 90, 90],
+        [60, 70, 80, 100, 120, 130],
+      ],
+      capRest: true,
+    },
   };
   const EXERCISE_PLANS = Object.fromEntries(
     Object.entries(PLAN_WEIGHTS).map(([name, spec]) => [name, buildPlan(name, spec)])
@@ -1426,6 +1442,7 @@
     "High Tech - Standing Calf Raise": "Legs",
     "Eagle by Cybex - Leg Press": "Legs",
     "Precor - Adductor 620": "Legs",
+    "Precor - Abductor 621": "Legs",
     "Hoist ROC-IT - Biceps Curl": "Shoulders/Bi's & Tri's",
     "Body Masters - CM 226 - Tricep Press": "Shoulders/Bi's & Tri's",
     "Icarian -Tricep Ext. 208": "Shoulders/Bi's & Tri's",
@@ -1566,6 +1583,11 @@
     "Precor - Adductor 620": [
       { src: "machines/precor-adductor-620-1.jpg", caption: "Instructions plate: Precor Adductor 620." },
       { src: "machines/precor-adductor-620-2.jpg", caption: "Weight stack, numbers in pounds and kilograms." },
+    ],
+    "Precor - Abductor 621": [
+      { src: "machines/precor-abductor-621-1.jpg", caption: "Instructions plate: Precor Abductor 621." },
+      { src: "machines/precor-abductor-621-2.jpg", caption: "Precor Abductor 621, seat, leg pads and foot pegs." },
+      { src: "machines/precor-abductor-621-3.jpg", caption: "Weight stack, 10 to 150 lb in 10 lb steps." },
     ],
     "Eagle by Cybex - Leg Press": [
       { src: "machines/eagle-by-cybex-leg-press-2.jpg", caption: "Instructions plate, Eagle leg press, tag E12." },
@@ -1862,6 +1884,7 @@
     "Hoist ROC-IT - Leg Curl": "Hamstrings",
     "High Tech - Standing Calf Raise": "Calves",
     "Precor - Adductor 620": "Adductors",
+    "Precor - Abductor 621": "Abductors",
   };
   const warmupNote = document.getElementById("warmup-note");
   const warmupNoteText = document.getElementById("warmup-note-text");
@@ -2593,6 +2616,7 @@
     "Hoist ROC-IT - Leg Extension": "Quads.",
     "High Tech - Standing Calf Raise": "Calves.",
     "Precor - Adductor 620": "Inner thigh (adductors).",
+    "Precor - Abductor 621": "Outer hip and glutes (abductors).",
     "Eagle by Cybex - Leg Press": "Quads, glutes, hamstrings.",
     "Hoist ROC-IT - Biceps Curl": "Biceps, forearms.",
     "Body Masters - CM 226 - Tricep Press": "Triceps, front shoulders.",
