@@ -334,11 +334,12 @@ async function handleEmailReport(request, env, headers) {
 }
 
 // Every page matching `query` (filter + sorts), following Notion's pagination
-// up to 5 pages of 100. Returns { results } or { error } with Notion's reply.
+// up to 50 pages of 100 (5000 rows) as a runaway-query safety net, not a real
+// limit. Returns { results } or { error } with Notion's reply.
 async function queryAll(env, query) {
   const results = [];
   let cursor;
-  for (let page = 0; page < 5; page++) {
+  for (let page = 0; page < 50; page++) {
     const res = await fetch(`https://api.notion.com/v1/databases/${env.NOTION_DATABASE_ID}/query`, {
       method: "POST",
       headers: notionHeaders(env),
