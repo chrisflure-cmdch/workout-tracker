@@ -914,6 +914,7 @@
     "Precor - Lat Pulldown": { empty: 5, part: "carriage" },
     "Precor - Low Row": { empty: 15, part: "carriage" },
     "Precor - Seated Row": { empty: 10, part: "carriage" },
+    "Shoulder Press BM Smith Machine": { empty: 23, part: "bar" },
   };
 
   // Every coded exercise runs the same 4-week template; only the weights differ,
@@ -991,6 +992,21 @@
         [23, 73, 113, 133, 143],
       ],
     },
+    // Shoulder Press BM Smith Machine added 2026-10-29 from Week 0 calibration
+    // (2026-10-29): same physical Matrix-branded Body Masters Smith rack as
+    // Incline Bench Press, just racked for a seated shoulder press instead
+    // (23 lb counterbalanced bar, confirmed by Chris). Week 0 topped out at
+    // a genuine 103 x 1 max single, so that is coded as the Max Attempt
+    // target as-is rather than stretched higher.
+    "Shoulder Press BM Smith Machine": {
+      weeks: [
+        [23, 43, 63, 73, 83, 83, 83, 83],
+        [23, 43, 63, 83, 93, 93, 93],
+        [23, 43, 63, 63, 63],
+        [23, 63, 83, 93, 103],
+      ],
+      capRest: true,
+    },
     "Squat (Body Masters PS300)": {
       weeks: [
         // 2026-10-03: Week 4 Max Attempt hit a clean 282 (1 rep, 1-2 more
@@ -1057,6 +1073,20 @@
         [[100, 110], [120, 130], [140, 155], [150, 165], [160, 175], [170, 185]],
       ],
     },
+    // Nautilus Nitro - Pullover added 2026-10-29 from Week 0 calibration
+    // (2026-10-20): pin-loaded, single grip (one crossbar handle, decal
+    // confirmed). Clean stack progression 95 to 160 across 8 sets; 160 was
+    // only 2 reps, not a true single, so Max Attempt steps to 170 as a
+    // modest stretch target.
+    "Nautilus Nitro - Pullover": {
+      weeks: [
+        [50, 80, 110, 125, 140, 140, 140, 140],
+        [50, 80, 110, 140, 155, 155, 155],
+        [50, 80, 110, 110, 110],
+        [50, 80, 110, 140, 170],
+      ],
+      capRest: true,
+    },
     // Nautilus Nitro - Overhead Press added 2026-09-13. One machine, one
     // exercise entry -- Chris's outer grip is weaker than his inner grip, so
     // every rung alternates Outer then Inner at the same rep/rest step; he
@@ -1073,6 +1103,23 @@
         [[50, 65], [80, 95], [95, 110], [95, 110], [95, 110]],
         [[50, 65], [80, 95], [95, 110], [105, 120], [115, 130], [125, 145]],
       ],
+    },
+    // BODY MASTERS CM 280 - Shoulder Press added 2026-10-29 from Week 0
+    // calibration (2026-10-19): pin-loaded, two-grip (decal confirms
+    // wide-grip/close-grip mode). Inner consistently out-lifts Outer by
+    // about 20 lb at every rung, matching the house pattern, until both
+    // topped out at 170 -- Outer a genuine 1-rep single, Inner an easier
+    // 3 reps. No stack-chart photo for this one, so Max Attempt is coded
+    // conservatively at 170/170 for both grips rather than guessing Inner's
+    // real ceiling; push Inner higher once a real session tests it.
+    "BODY MASTERS CM 280 - Shoulder Press": {
+      weeks: [
+        [[60, 80], [80, 100], [100, 120], [120, 140], [130, 150], [130, 150], [130, 150], [130, 150]],
+        [[60, 80], [80, 100], [100, 120], [130, 150], [140, 160], [140, 160], [140, 160]],
+        [[60, 80], [80, 100], [100, 120], [100, 120], [100, 120]],
+        [[60, 80], [100, 120], [120, 140], [130, 150], [170, 170]],
+      ],
+      capRest: true,
     },
     // Added 2026-09-28 from Week 0 calibration on 2026-09-28 (Set 1,3,5,7:
     // 55x10, 70x10, 75x6, 75x6). Confirmed by Chris 2026-09-30 as drafted.
@@ -1434,7 +1481,10 @@
     "Precor - Seated Row": "Chest and Back",
     "BODY MASTERS CM 240 - Lat Pull-down": "Chest and Back",
     "Nautilus Nitro - Vertical Chest": "Chest and Back",
+    "Nautilus Nitro - Pullover": "Chest and Back",
+    "Shoulder Press BM Smith Machine": "Shoulders/Bi's & Tri's",
     "Nautilus Nitro - Overhead Press": "Shoulders/Bi's & Tri's",
+    "BODY MASTERS CM 280 - Shoulder Press": "Shoulders/Bi's & Tri's",
     "BODY MASTERS CM 282 - Lateral Raise": "Shoulders/Bi's & Tri's",
     "BODY MASTERS LE 411 - 45° Super Seated Leg Press": "Legs",
     "Hoist ROC-IT - Leg Curl": "Legs",
@@ -1528,6 +1578,9 @@
     "Incline Bench Press BM Smith Machine": [
       { src: "machines/incline-bench-smith-1.jpg", caption: "Body Masters Smith machine with the adjustable incline bench. Plates load on the bar." },
     ],
+    "Shoulder Press BM Smith Machine": [
+      { src: "machines/shoulder-press-smith-1.jpg", caption: "Same Matrix-branded Smith rack as the Incline Bench, racked here with the seated shoulder-press bench. Plates load on the bar." },
+    ],
     "Squat (Body Masters PS300)": [
       { src: "machines/squat-ps300-2.jpg", caption: "Instructions plate: PS 300 Squat." },
       { src: "machines/squat-ps300-1.jpg", caption: "Body Masters PS300 squat machine. Plates load on the bar ends." },
@@ -1545,10 +1598,18 @@
     "Nautilus Nitro - Vertical Chest": [
       { src: "machines/vertical-chest-1.jpg", caption: "Instructions plate: Nautilus Nitro Vertical Chest." },
     ],
+    "Nautilus Nitro - Pullover": [
+      { src: "machines/nautilus-pullover-1.jpg", caption: "Instructions plate: Nautilus Nitro Pullover." },
+      { src: "machines/nautilus-pullover-2.jpg", caption: "Nautilus Nitro Pullover, shoulder pads and foot-lever entry." },
+      { src: "machines/nautilus-pullover-3.jpg", caption: "Weight stack, in pounds and kilograms." },
+    ],
     "Nautilus Nitro - Overhead Press": [
       { src: "machines/overhead-press-3.jpg", caption: "Instructions plate." },
       { src: "machines/overhead-press-1.jpg", caption: "Nautilus Nitro overhead press." },
       { src: "machines/overhead-press-2.jpg", caption: "Weight stack. The pin sits beside the number, in pounds and kilograms." },
+    ],
+    "BODY MASTERS CM 280 - Shoulder Press": [
+      { src: "machines/cm280-shoulder-press-1.jpg", caption: "Instructions plate: Body Masters Circuit Master CM 280 Shoulder Press." },
     ],
     "BODY MASTERS CM 282 - Lateral Raise": [
       { src: "machines/lateral-raise-3.jpg", caption: "Instructions plate: CM 282 Lateral Raise." },
@@ -1866,12 +1927,15 @@
     "Precor - Incline Press": "Chest",
     "Precor - Incline Press 402": "Chest",
     "Precor - Pec Fly 505": "Chest",
+    "Shoulder Press BM Smith Machine": "Shoulders",
     "Precor - Vertical Row 309": "Back",
     "BODY MASTERS CM 240 - Lat Pull-down": "Back",
     "Precor - Lat Pulldown": "Back",
     "Precor - Low Row": "Back",
     "Precor - Seated Row": "Back",
+    "Nautilus Nitro - Pullover": "Back",
     "Nautilus Nitro - Overhead Press": "Shoulders",
+    "BODY MASTERS CM 280 - Shoulder Press": "Shoulders",
     "BODY MASTERS CM 282 - Lateral Raise": "Shoulders",
     "Hoist ROC-IT - Biceps Curl": "Biceps",
     "Preacher Curls - Olympic EZ bar": "Biceps",
@@ -2609,7 +2673,10 @@
     "Precor - Vertical Row 309": "Lats, mid back, rear shoulders, biceps.",
     "BODY MASTERS CM 240 - Lat Pull-down": "Lats, upper back, biceps, rear shoulders.",
     "Nautilus Nitro - Vertical Chest": "Chest, front shoulders, triceps.",
+    "Shoulder Press BM Smith Machine": "Shoulders, upper chest, triceps.",
+    "Nautilus Nitro - Pullover": "Lats, teres major, rhomboids, mid back.",
     "Nautilus Nitro - Overhead Press": "Shoulders, triceps, upper chest.",
+    "BODY MASTERS CM 280 - Shoulder Press": "Deltoids, upper chest, triceps.",
     "BODY MASTERS CM 282 - Lateral Raise": "Side shoulders, upper traps.",
     "BODY MASTERS LE 411 - 45° Super Seated Leg Press": "Quads, glutes, hamstrings.",
     "Hoist ROC-IT - Leg Curl": "Hamstrings, calves.",
