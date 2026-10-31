@@ -438,6 +438,19 @@
     font-size: 14px;
     font-weight: 600;
   }
+  .adjust-plates-toggle {
+    background: none;
+    border: none;
+    color: var(--glow-bright);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 0;
+    margin: -4px 0 0;
+    cursor: pointer;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
   #exercise-reference a { display: inline-block; margin-right: 16px; color: var(--glow); }
   #exercise-setup { margin: 0; }
   #exercise-setup strong { color: var(--glow); }
@@ -658,6 +671,8 @@
       <div class="item"><span class="label">Rest</span><span class="value" id="p-rest">—</span></div>
     </div>
     <div class="plates-row" id="p-plates"></div>
+    <button type="button" class="adjust-plates-toggle" id="adjust-plates-toggle" hidden>Adjust with plates &#9662;</button>
+    <div id="plan-plates-slot"></div>
 
     <div id="freestyle-block" hidden>
       <label>Set #
@@ -1878,6 +1893,10 @@
   const phaseSelect = document.getElementById("phase");
   const pWeight = document.getElementById("p-weight");
   const pReps = document.getElementById("p-reps");
+  const adjustPlatesToggle = document.getElementById("adjust-plates-toggle");
+  const planPlatesSlot = document.getElementById("plan-plates-slot");
+  let planPlatesOn = false;
+  let currentStepPlates = [];
   const pRest = document.getElementById("p-rest");
   const pPlates = document.getElementById("p-plates");
   const actualWeightInput = document.getElementById("actualWeight");
@@ -2225,8 +2244,37 @@
       finishedHtml;
   }
 
+  // Lets a plate-loaded set be adjusted with the same tap-to-add picker
+  // Freestyle uses, instead of typing the math out by hand. Hidden until
+  // tapped, so the common case (confirming the prescribed weight) looks
+  // exactly like it always has.
+  function closePlanPlates() {
+    if (!planPlatesOn) return;
+    customTargetRow.after(platesLabel);
+    platesLabel.hidden = true;
+    planPlatesOn = false;
+    adjustPlatesToggle.textContent = "Adjust with plates ▾";
+  }
+  adjustPlatesToggle.addEventListener("click", () => {
+    if (planPlatesOn) {
+      closePlanPlates();
+      return;
+    }
+    planPlatesSlot.appendChild(platesLabel);
+    platesLabel.hidden = false;
+    const machine = FREESTYLE_PLATE_MACHINES[exerciseSelect.value];
+    emptyWeightInput.value = machine ? machine.empty : "";
+    setPlates(currentStepPlates);
+    planPlatesOn = true;
+    adjustPlatesToggle.textContent = "Hide plates ▴";
+  });
+
   function syncPrescribed() {
-    if (weekSelect.value === FREESTYLE_WEEK) return;
+    if (weekSelect.value === FREESTYLE_WEEK) {
+      adjustPlatesToggle.hidden = true;
+      closePlanPlates();
+      return;
+    }
     const plan = weekSteps();
     const idx = plan.findIndex((s) => s.phase === phaseSelect.value);
     const step = idx >= 0 ? plan[idx] : plan[0];
@@ -2235,6 +2283,9 @@
     pRest.textContent = step.rest;
     actualWeightInput.value = step.weight;
     renderPlates(step, Math.max(idx, 0) === plan.length - 1, isStackLoaded(exerciseSelect.value));
+    currentStepPlates = step.plates || [];
+    adjustPlatesToggle.hidden = !FREESTYLE_PLATE_MACHINES[exerciseSelect.value];
+    closePlanPlates();
   }
 
   // Week-completion locking: a week is "done" once its last phase has been
