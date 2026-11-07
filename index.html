@@ -3039,6 +3039,17 @@
     return groups;
   }
 
+  const BLOCK_LETTERS = {
+    "Week 1 - Foundation": "F",
+    "Week 2 - Neurological Peak": "N",
+    "Week 3 - De-load": "D",
+    "Week 4 - Max Effort Test": "M",
+    "Freestyle": "X",
+  };
+  function blockLetter(week) {
+    return BLOCK_LETTERS[week] || "";
+  }
+
   function buildDateGroupHTML(g) {
     const label = parseISODate(g.date).toLocaleDateString("en-US", {
       weekday: "long",
@@ -3046,12 +3057,12 @@
       day: "numeric",
     });
     const rows = g.rows
-      .map((r) => `<tr><td>${esc(r.exercise)}</td><td>${esc(r.phase)}</td><td>${esc(r.actualWeight)} lbs</td><td>${esc(r.reps)}</td></tr>`)
+      .map((r) => `<tr><td>${esc(r.exercise)}</td><td>${esc(r.phase)}</td><td>${esc(blockLetter(r.week))}</td><td>${esc(r.actualWeight)} lbs</td><td>${esc(r.reps)}</td></tr>`)
       .join("");
     // One body icon per category trained that day, in first-logged order.
     const dayCategories = [...new Set(g.rows.map((r) => EXERCISE_CATEGORIES[r.exercise]).filter(Boolean))];
     const icons = dayCategories.map((c) => bodyIconSVG(c, 26)).join("");
-    return `<div class="date-group" data-date="${g.date}"><h3>${label}${icons ? `<span class="cat-icons">${icons}</span>` : ""}</h3><table><thead><tr><th>Exercise</th><th>Phase</th><th>Weight</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table>${reportButtonsHTML()}</div>`;
+    return `<div class="date-group" data-date="${g.date}"><h3>${label}${icons ? `<span class="cat-icons">${icons}</span>` : ""}</h3><table><thead><tr><th>Exercise</th><th>Phase</th><th>Block</th><th>Weight</th><th>Reps</th></tr></thead><tbody>${rows}</tbody></table>${reportButtonsHTML()}</div>`;
   }
 
   function wireDateGroupButtons(root, groups) {
