@@ -924,6 +924,7 @@
     "Squat (Body Masters PS300)": { empty: 62, part: "sled" },
     "BODY MASTERS LE 411 - 45° Super Seated Leg Press": { empty: 30, part: "sled" },
     "Preacher Curls - Olympic EZ bar": { empty: 25, part: "bar" },
+    "Hammer Strength - Wide Chest Press": { empty: 0, part: "arm" },
     "Precor - Chest Press": { empty: 12, part: "carriage" },
     "Precor - Incline Press": { empty: 12, part: "carriage" },
     "Precor - Lat Pulldown": { empty: 5, part: "carriage" },
@@ -1073,6 +1074,19 @@
         [70, 80, 100, 100, 100],
         [70, 80, 90, 110, 130, 140],
       ],
+    },
+    // BODY MASTERS CM 242 - Low Row added 2026-11-08 from a Week 0 ramp test
+    // (pin-loaded, 10 lb steps, stack to 300 per Chris's note). Topped out at
+    // 150 x 4 on the last set, so Week 1 holds under that and Max Attempt
+    // steps one rung past it.
+    "BODY MASTERS CM 242 - Low Row": {
+      weeks: [
+        [80, 90, 100, 110, 120, 120, 130, 130],
+        [80, 90, 100, 110, 130, 130, 140],
+        [80, 90, 100, 100, 100],
+        [80, 90, 100, 110, 140, 160],
+      ],
+      capRest: true,
     },
     // BODY MASTERS CM 240 - Lat Pull-down added 2026-09-08 for the pin-loaded
     // stack (base 80 lbs), ramping to a 150 lb max-effort target.
@@ -1409,6 +1423,20 @@
       ],
       capRest: true,
     },
+    // Hammer Strength - Wide Chest Press added 2026-11-08 from a Week 0 ramp
+    // test. Starting resistance per the manufacturer spec is ~2 lb (ISO-Lateral
+    // counterbalanced arms), so it's coded as 0 empty weight like Chris logged
+    // it. Topped out at 220 for a double on the last set; Max Attempt steps
+    // one rung past that.
+    "Hammer Strength - Wide Chest Press": {
+      weeks: [
+        [90, 120, 150, 170, 180, 180, 190, 190],
+        [90, 120, 150, 170, 190, 190, 200],
+        [90, 120, 150, 150, 150],
+        [90, 120, 150, 170, 210, 230],
+      ],
+      capRest: true,
+    },
     "Precor - Incline Press": {
       weeks: [
         [62, 102, 122, 132, 142, 142, 142, 142],
@@ -1545,7 +1573,9 @@
     "Squat (Body Masters PS300)": "Legs",
     "Body Masters 310 Chest Press - Vertical": "Chest and Back",
     "Precor - Vertical Row 309": "Chest and Back",
+    "BODY MASTERS CM 242 - Low Row": "Chest and Back",
     "Precor - Chest Press": "Chest and Back",
+    "Hammer Strength - Wide Chest Press": "Chest and Back",
     "Precor - Incline Press": "Chest and Back",
     "Precor - Incline Press 402": "Chest and Back",
     "Precor - Pec Fly 505": "Chest and Back",
@@ -1620,6 +1650,11 @@
       { src: "machines/precor-chest-press-2.jpg", caption: "Precor Chest Press seat and handles." },
       { src: "machines/precor-chest-press-3.jpg", caption: "Precor Chest Press from the side. Plates load on the arm ends." },
     ],
+    "Hammer Strength - Wide Chest Press": [
+      { src: "machines/hammer-strength-wide-chest-1.jpg", caption: "Hammer Strength Motion Technology base plate." },
+      { src: "machines/hammer-strength-wide-chest-2.jpg", caption: "\"ISO Wide Chest\" decal, confirming the ISO-Lateral Wide Chest Press model." },
+      { src: "machines/hammer-strength-wide-chest-3.jpg", caption: "Full machine: independent plate-loaded arms, adjustable seat, pressed bilaterally." },
+    ],
     "Precor - Incline Press": [
       { src: "machines/precor-incline-press-1.jpg", caption: "Instructions plate: Precor Incline Press." },
       { src: "machines/precor-incline-press-2.jpg", caption: "Precor Incline Press. Plates load on the arm ends." },
@@ -1667,6 +1702,11 @@
     ],
     "Precor - Vertical Row 309": [
       { src: "machines/vertical-row-309-1.jpg", caption: "Instructions plate: Vertical Row 309 (the plate itself reads Icarian)." },
+    ],
+    "BODY MASTERS CM 242 - Low Row": [
+      { src: "machines/cm242-low-row-1.jpg", caption: "Instructions plate: Body Masters Circuit Master CM 242 - Low Row." },
+      { src: "machines/cm242-low-row-2.jpg", caption: "Handle end: single bar, gripped with both hands." },
+      { src: "machines/cm242-low-row-3.jpg", caption: "Weight stack, 10 lb steps to 300 lb." },
     ],
     "Nautilus Nitro - Vertical Chest": [
       { src: "machines/vertical-chest-1.jpg", caption: "Instructions plate: Nautilus Nitro Vertical Chest." },
@@ -2003,11 +2043,13 @@
     "Body Masters 310 Chest Press - Vertical": "Chest",
     "Nautilus Nitro - Vertical Chest": "Chest",
     "Precor - Chest Press": "Chest",
+    "Hammer Strength - Wide Chest Press": "Chest",
     "Precor - Incline Press": "Chest",
     "Precor - Incline Press 402": "Chest",
     "Precor - Pec Fly 505": "Chest",
     "Shoulder Press BM Smith Machine": "Shoulders",
     "Precor - Vertical Row 309": "Back",
+    "BODY MASTERS CM 242 - Low Row": "Back",
     "BODY MASTERS CM 240 - Lat Pull-down": "Back",
     "Precor - Lat Pulldown": "Back",
     "Precor - Low Row": "Back",
@@ -2782,6 +2824,7 @@
     "Squat (Body Masters PS300)": "Quads, glutes, hamstrings, lower back.",
     "Body Masters 310 Chest Press - Vertical": "Chest, front shoulders, triceps.",
     "Precor - Vertical Row 309": "Lats, mid back, rear shoulders, biceps.",
+    "BODY MASTERS CM 242 - Low Row": "Lats, biceps, rhomboids, mid traps, rear shoulders, triceps (long head).",
     "BODY MASTERS CM 240 - Lat Pull-down": "Lats, upper back, biceps, rear shoulders.",
     "Nautilus Nitro - Vertical Chest": "Chest, front shoulders, triceps.",
     "Shoulder Press BM Smith Machine": "Shoulders, upper chest, triceps.",
@@ -2801,6 +2844,7 @@
     "Icarian -Tricep Ext. 208": "Triceps.",
     "Preacher Curls - Olympic EZ bar": "Biceps, forearms.",
     "Precor - Chest Press": "Chest, front shoulders, triceps.",
+    "Hammer Strength - Wide Chest Press": "Chest (wide/outer fibers), front shoulders, triceps.",
     "Precor - Incline Press": "Upper chest, front shoulders, triceps.",
     "Precor - Incline Press 402": "Upper chest, triceps.",
     "Precor - Pec Fly 505": "Chest, front shoulders.",
